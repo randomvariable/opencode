@@ -56,6 +56,7 @@ import { useTuiConfig } from "../../config"
 import { usePromptWorkspace } from "./workspace"
 import { usePromptMove } from "./move"
 import { readLocalAttachment } from "./local-attachment"
+import { Identifier } from "@opencode-ai/core/id/id"
 
 export type PromptProps = {
   sessionID?: string
@@ -1026,6 +1027,7 @@ export function Prompt(props: PromptProps) {
       sessionID = res.data.id
     }
 
+    const messageID = Identifier.ascending("message")
     const inputText = expandTrackedPastedText(
       store.prompt.input,
       input.extmarks.getAllForTypeId(promptPartTypeId).flatMap((extmark) => {
@@ -1094,23 +1096,33 @@ export function Prompt(props: PromptProps) {
       })
     } else {
       move.startSubmit()
+      const parts = [
+        ...editorParts.map((part) => ({
+          id: Identifier.ascending("part"),
+          ...part,
+        })),
+        {
+          id: Identifier.ascending("part"),
+          type: "text" as const,
+          text: inputText,
+        },
+        ...nonTextParts.map((part) => ({
+          id: Identifier.ascending("part"),
+          ...part,
+        })),
+      ]
+      const request = {
+        sessionID,
+        messageID,
+        agent: agent.name,
+        model: selectedModel,
+        variant,
+        parts,
+      }
+      sync.session.addOptimisticPrompt(request)
       sdk.client.session
-        .prompt({
-          sessionID,
-          ...selectedModel,
-          agent: agent.name,
-          model: selectedModel,
-          variant,
-          parts: [
-            ...editorParts,
-            {
-              type: "text",
-              text: inputText,
-            },
-            ...nonTextParts,
-          ],
-        })
-        .catch(() => {})
+        .prompt(request)
+        .catch(() => sync.session.removeOptimisticPrompt(request.sessionID, request.messageID))
       if (editorParts.length > 0) editor.markSelectionSent()
     }
     history.append({

@@ -33,6 +33,8 @@ import path from "path"
 import { aggregateFailures } from "./aggregate-failures"
 import { useKV } from "./kv"
 import { destroyRenderer } from "../util/renderer"
+import { Binary } from "@opencode-ai/core/util/binary"
+import { optimisticParts, type OptimisticPromptPart } from "./sync-optimistic"
 
 const emptyConsoleState: ConsoleState = {
   consoleManagedProviders: [],
@@ -145,6 +147,7 @@ export const {
     const touchPart = (sessionID: string, partID: string) => {
       hydratingSessions.get(sessionID)?.parts.add(partID)
     }
+    const optimisticMessages = new Set<string>()
 
     function sessionListQuery(): { scope?: "project"; path?: string } {
       if (!kv.get("session_directory_filter_enabled", true)) return { scope: "project" }
@@ -258,6 +261,7 @@ export const {
           break
 
         case "session.deleted": {
+          for (const message of store.message[event.properties.info.id] ?? []) optimisticMessages.delete(message.id)
           const result = search(store.session, event.properties.info.id, (s) => s.id)
           if (result.found) {
             setStore(
@@ -347,6 +351,7 @@ export const {
         }
         case "message.removed": {
           touchMessage(event.properties.sessionID, event.properties.messageID)
+          optimisticMessages.delete(event.properties.messageID)
           const messages = store.message[event.properties.sessionID]
           const result = search(messages, event.properties.messageID, (m) => m.id)
           if (result.found) {
@@ -362,6 +367,7 @@ export const {
         }
         case "message.part.updated": {
           touchPart(event.properties.part.sessionID, event.properties.part.id)
+          optimisticMessages.delete(event.properties.part.messageID)
           const parts = store.part[event.properties.part.messageID]
           if (!parts) {
             setStore("part", event.properties.part.messageID, [event.properties.part])
@@ -578,6 +584,66 @@ export const {
           if (last.role === "user") return "working"
           return last.time.completed ? "idle" : "working"
         },
+        addOptimisticPrompt(input: {
+          sessionID: string
+          messageID: string
+          agent: string
+          model: { providerID: string; modelID: string }
+          variant?: string
+          parts: OptimisticPromptPart[]
+        }) {
+          optimisticMessages.add(input.messageID)
+          const messages = store.message[input.sessionID]
+          const match = messages ? Binary.search(messages, input.messageID, (m) => m.id) : undefined
+          const info: Message = {
+            id: input.messageID,
+            sessionID: input.sessionID,
+            role: "user",
+            time: { created: Date.now() },
+            agent: input.agent,
+            model: {
+              providerID: input.model.providerID,
+              modelID: input.model.modelID,
+              ...(input.variant ? { variant: input.variant } : {}),
+            },
+          }
+          batch(() => {
+            if (!messages) {
+              setStore("message", input.sessionID, [info])
+            } else if (!match?.found) {
+              setStore(
+                "message",
+                input.sessionID,
+                produce((draft) => {
+                  Binary.insert(draft, info, (message) => message.id)
+                }),
+              )
+            }
+            setStore("part", input.messageID, reconcile(optimisticParts(input)))
+          })
+        },
+        removeOptimisticPrompt(sessionID: string, messageID: string) {
+          if (!optimisticMessages.delete(messageID)) return
+          const messages = store.message[sessionID]
+          const match = messages ? Binary.search(messages, messageID, (m) => m.id) : undefined
+          batch(() => {
+            if (match?.found) {
+              setStore(
+                "message",
+                sessionID,
+                produce((draft) => {
+                  draft.splice(match.index, 1)
+                }),
+              )
+            }
+            setStore(
+              "part",
+              produce((draft) => {
+                delete draft[messageID]
+              }),
+            )
+          })
+        },
         async sync(sessionID: string) {
           if (fullSyncedSessions.has(sessionID)) return
           const syncing = syncingSessions.get(sessionID)
@@ -598,6 +664,7 @@ export const {
                 if (!match.found) draft.session.splice(match.index, 0, session.data!)
                 draft.todo[sessionID] = todo.data ?? []
                 const currentMessages = draft.message[sessionID] ?? []
+                const fetchedIDs = new Set((messages.data ?? []).map((message) => message.info.id))
                 const infos = (messages.data ?? []).flatMap((message) => {
                   if (!tracker.messages.has(message.info.id)) return [message.info]
                   const current = currentMessages.find((item) => item.id === message.info.id)
@@ -605,7 +672,10 @@ export const {
                 })
                 infos.push(
                   ...currentMessages.filter(
-                    (message) => tracker.messages.has(message.id) && !infos.some((item) => item.id === message.id),
+                    (message) =>
+                      (tracker.messages.has(message.id) ||
+                        (optimisticMessages.has(message.id) && !fetchedIDs.has(message.id))) &&
+                      !infos.some((item) => item.id === message.id),
                   ),
                 )
                 const removed = infos.slice(0, -100)
@@ -617,6 +687,10 @@ export const {
                     continue
                   }
                   const currentParts = draft.part[message.info.id] ?? []
+                  if (optimisticMessages.has(message.info.id) && message.parts.length === 0) {
+                    if (currentParts.length > 0) draft.part[message.info.id] = currentParts
+                    continue
+                  }
                   const parts = message.parts.flatMap((part) => {
                     const current = currentParts.find((item) => item.id === part.id)
                     if (tracker.parts.has(part.id)) return current ? [current] : []
@@ -637,6 +711,7 @@ export const {
                     ),
                   )
                   draft.part[message.info.id] = parts
+                  if (parts.length > 0) optimisticMessages.delete(message.info.id)
                 }
                 for (const message of removed) delete draft.part[message.id]
                 draft.message[sessionID] = visible
