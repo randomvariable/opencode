@@ -333,7 +333,8 @@ export const layer = Layer.effect(
 export const defaultLayer = Layer.suspend(() =>
   layer
     .pipe(
-      Layer.provide(Layer.mergeAll(Config.defaultLayer, MCP.defaultLayer)),
+      Layer.provide(Config.defaultLayer),
+      Layer.provide(MCP.defaultLayer),
       Layer.provide(Plugin.defaultLayer),
       Layer.provide(Question.defaultLayer),
       Layer.provide(Messaging.defaultLayer),
@@ -433,6 +434,7 @@ function isJsonSchemaObject(value: unknown): value is Record<string, unknown> {
 
 export const node = LayerNode.make(layer.pipe(Layer.provide(Ripgrep.defaultLayer)), [
   Config.node,
+  MCP.node,
   Plugin.node,
   Question.node,
   Messaging.node,

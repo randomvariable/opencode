@@ -139,10 +139,10 @@ export const layer = Layer.effect(
   }),
 )
 
-export const defaultLayer = layer.pipe(Layer.provide(Skill.defaultLayer), Layer.provide(LocationServiceMap.layer), Layer.provide(MCP.defaultLayer))
+export const defaultLayer = layer.pipe(Layer.provide(Skill.defaultLayer), Layer.provide(LocationServiceMap.layer), Layer.provide(MCP.defaultLayer), Layer.provide(Config.defaultLayer))
 
 const locationServiceMapNode = LayerNode.make(LocationServiceMap.layer, [])
 
-export const node = LayerNode.make(layer, [Skill.node, locationServiceMapNode, MCP.node])
+export const node = LayerNode.make(layer, [Skill.node, locationServiceMapNode, MCP.node, Config.node])
 
 export * as SystemPrompt from "./system"

@@ -33,7 +33,6 @@ import { EventV2 } from "@opencode-ai/core/event"
 import { createPluginClient } from "./client"
 import { PLUGIN_CLIENT_HEADER, PluginClientRuntime } from "@/server/plugin-client"
 
-const log = Log.create({ service: "plugin" })
 
 export const Event = {
   Error: EventV2.define({
@@ -173,11 +172,12 @@ export const layer = Layer.effect(
         const { Server } = yield* Effect.promise(() => import("@/server/server"))
         const clientRuntime = Option.getOrUndefined(yield* Effect.serviceOption(PluginClientRuntime))
 
+        let bootstrapping = true
         const getServerUrl = () => Server.url ?? new URL("http://localhost:4096")
         const client = createPluginClient({
           directory: ctx.directory,
           getServerUrl,
-          fallbackFetch: async (request) => Server.Default().app.fetch(request),
+          fallbackFetch: serverFetch(Server, ctx.directory, () => bootstrapping, clientRuntime),
         })
         const cfg = yield* config.get()
         const input: PluginInput = {
