@@ -30,6 +30,7 @@ import { RuntimeFlags } from "@/effect/runtime-flags"
 import { EventV2Bridge } from "@/event-v2-bridge"
 import { InstallationChannel } from "@opencode-ai/core/installation/version"
 import { EventV2 } from "@opencode-ai/core/event"
+import { createPluginClient } from "./client"
 
 const log = Log.create({ service: "plugin" })
 
@@ -148,11 +149,11 @@ export const layer = Layer.effect(
 
         const { Server } = yield* Effect.promise(() => import("../server/server"))
 
-        const client = createOpencodeClient({
-          baseUrl: "http://localhost:4096",
+        const getServerUrl = () => Server.url ?? new URL("http://localhost:4096")
+        const client = createPluginClient({
           directory: ctx.directory,
-          headers: ServerAuth.headers(),
-          fetch: async (...args) => Server.Default().app.fetch(...args),
+          getServerUrl,
+          fallbackFetch: async (request) => Server.Default().app.fetch(request),
         })
         const cfg = yield* config.get()
         const input: PluginInput = {
@@ -166,7 +167,7 @@ export const layer = Layer.effect(
             },
           },
           get serverUrl(): URL {
-            return Server.url ?? new URL("http://localhost:4096")
+            return getServerUrl()
           },
           // @ts-expect-error
           $: typeof Bun === "undefined" ? undefined : Bun.$,
