@@ -8,6 +8,9 @@ import { configEntryNameFromPath } from "./entry-name"
 import { InvalidError } from "@opencode-ai/core/v1/config/error"
 import * as ConfigMarkdown from "./markdown"
 
+export const Info = ConfigCommandV1.Info
+export type Info = ConfigCommandV1.Info
+
 const decodeInfo = Schema.decodeUnknownExit(ConfigCommandV1.Info)
 
 export async function load(dir: string) {

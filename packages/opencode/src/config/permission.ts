@@ -1,4 +1,4 @@
-export * as ConfigPermissionV1 from "./permission"
+export * as ConfigPermission from "./permission"
 import { Schema, SchemaGetter } from "effect"
 
 export const Action = Schema.Literals(["ask", "allow", "deny"]).annotate({ identifier: "PermissionActionConfig" })
@@ -25,12 +25,8 @@ const InputObject = Schema.StructWithRest(
     external_directory: Schema.optional(Rule),
     todowrite: Schema.optional(Action),
     question: Schema.optional(Action),
-    message: Schema.optional(Action),
     webfetch: Schema.optional(Action),
     websearch: Schema.optional(Action),
-    repo_clone: Schema.optional(Rule),
-    repo_overview: Schema.optional(Rule),
-    model_override: Schema.optional(Rule),
     lsp: Schema.optional(Rule),
     doom_loop: Schema.optional(Action),
     skill: Schema.optional(Rule),
