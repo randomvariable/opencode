@@ -20,6 +20,9 @@ import { PartID } from "./schema"
 import { EffectBridge } from "@/effect/bridge"
 import { ProviderV2 } from "@opencode-ai/core/provider"
 import { ModelV2 } from "@opencode-ai/core/model"
+import { Config } from "@/config/config"
+
+const log = Log.create({ service: "session.tools" })
 
 export const resolve = Effect.fn("SessionTools.resolve")(function* (input: {
   agent: Agent.Info
@@ -36,6 +39,7 @@ export const resolve = Effect.fn("SessionTools.resolve")(function* (input: {
   const permission = yield* Permission.Service
   const registry = yield* ToolRegistry.Service
   const mcp = yield* MCP.Service
+  const config = yield* Config.Service
   const truncate = yield* Truncate.Service
 
   const context = (args: Record<string, unknown>, options: ToolExecutionOptions): Tool.Context => ({
@@ -114,7 +118,8 @@ export const resolve = Effect.fn("SessionTools.resolve")(function* (input: {
     })
   }
 
-  for (const [key, item] of Object.entries(yield* mcp.tools())) {
+  const mcpLazy = (yield* config.get()).experimental?.mcp_lazy === true
+  for (const [key, item] of mcpLazy ? [] : Object.entries(yield* mcp.tools())) {
     const execute = item.execute
     if (!execute) continue
 

@@ -29,10 +29,12 @@ import { WebSearchTool } from "./websearch"
 import { LspTool } from "./lsp"
 import * as Truncate from "./truncate"
 import { ApplyPatchTool } from "./apply_patch"
+import { McpSearchTool } from "./mcp-search"
+import { MCP } from "../mcp"
 import { Glob } from "@opencode-ai/core/util/glob"
 import path from "path"
 import { pathToFileURL } from "url"
-import { Effect, Layer, Context } from "effect"
+import { Effect, Layer, Context, Option } from "effect"
 import { FetchHttpClient, HttpClient } from "effect/unstable/http"
 import { ChildProcessSpawner } from "effect/unstable/process/ChildProcessSpawner"
 import { CrossSpawnSpawner } from "@opencode-ai/core/cross-spawn-spawner"
@@ -105,6 +107,8 @@ export const layer = Layer.effect(
     const greptool = yield* GrepTool
     const patchtool = yield* ApplyPatchTool
     const skilltool = yield* SkillTool
+    const mcpServiceOpt = yield* Effect.serviceOption(MCP.Service)
+    const mcpsearch = Option.isSome(mcpServiceOpt) ? yield* McpSearchTool : undefined
     const agent = yield* Agent.Service
 
     const state = yield* InstanceState.make<State>(
@@ -192,8 +196,13 @@ export const layer = Layer.effect(
           }
         }
 
-        yield* config.get()
+        const cfg = yield* config.get()
         const questionEnabled = ["app", "cli", "desktop"].includes(flags.client) || flags.enableQuestionTool
+
+        const mcpLazyEnabled = cfg.experimental?.mcp_lazy === true
+        const mcpsearchDef: Tool.Def[] = mcpLazyEnabled && mcpsearch
+          ? [yield* Tool.init(mcpsearch)]
+          : []
 
         const tool = yield* Effect.all({
           invalid: Tool.init(invalid),
@@ -233,6 +242,7 @@ export const layer = Layer.effect(
             tool.patch,
             ...(flags.experimentalLspTool ? [tool.lsp] : []),
             ...(flags.experimentalPlanMode && flags.client === "cli" ? [tool.plan] : []),
+            ...mcpsearchDef,
           ],
           task: tool.task,
           read: tool.read,
@@ -318,7 +328,7 @@ export const layer = Layer.effect(
 export const defaultLayer = Layer.suspend(() =>
   layer
     .pipe(
-      Layer.provide(Config.defaultLayer),
+      Layer.provide(Layer.mergeAll(Config.defaultLayer, MCP.defaultLayer)),
       Layer.provide(Plugin.defaultLayer),
       Layer.provide(Question.defaultLayer),
       Layer.provide(Todo.defaultLayer),

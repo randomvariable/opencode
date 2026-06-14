@@ -182,6 +182,10 @@ export const Info = Schema.Struct({
       policies: Schema.optional(Schema.mutable(Schema.Array(ConfigExperimental.Policy))).annotate({
         description: "Policy statements applied to supported resources, such as provider access",
       }),
+      mcp_lazy: Schema.optional(Schema.Boolean).annotate({
+        description:
+          "Enable lazy loading of MCP tools. When enabled, MCP tools are not loaded into context automatically. Instead, use the mcp_search tool to discover and call MCP tools on-demand.",
+      }),
     }),
   ),
 }).annotate({ identifier: "Config" })
