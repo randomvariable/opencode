@@ -112,6 +112,24 @@ function parseModelOverride(model: string): Effect.Effect<{ modelID: ModelV2.ID;
   })
 }
 
+// Escape untrusted subagent body to prevent XML tag breakout in rendered framing.
+// Parent must treat subagent message bodies as untrusted input.
+function escapeBody(body: string) {
+  return body.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+}
+
+function renderMessage(input: { sessionID: SessionID; body: string }) {
+  return [
+    `<task id="${input.sessionID}" state="awaiting_reply">`,
+    `<summary>Subagent sent a message and is awaiting your reply</summary>`,
+    `<message>`,
+    escapeBody(input.body),
+    `</message>`,
+    `Reply with the message tool: message(target:"subagent", task_id:"${input.sessionID}", body:"...").`,
+    "</task>",
+  ].join("\n")
+}
+
 export const TaskTool = Tool.define(
   id,
   Effect.gen(function* () {
@@ -176,7 +194,20 @@ export const TaskTool = Tool.define(
         : undefined
 
       const session = params.task_id
-        ? yield* sessions.get(derivedID ?? SessionID.make(params.task_id)).pipe(Effect.catchCause(() => Effect.succeed(undefined)))
+        ? yield* sessions.get(derivedID ?? SessionID.make(params.task_id)).pipe(
+            Effect.flatMap((s) => {
+              if (s.parentID !== ctx.sessionID)
+                return Effect.fail(new Error(`task_id ${params.task_id} is not a child of this session`))
+              return Effect.succeed(s)
+            }),
+            Effect.catchCause((cause) => {
+              // If the session doesn't exist at all, treat as not-found → create fresh.
+              // If it exists but parentage check failed, propagate the error.
+              const err = cause.toString()
+              if (err.includes("is not a child of this session")) return Effect.failCause(cause)
+              return Effect.succeed(undefined)
+            }),
+          )
         : undefined
       const parent = yield* sessions.get(ctx.sessionID)
       const childPermission = deriveSubagentSessionPermission({
@@ -364,10 +395,25 @@ export const TaskTool = Tool.define(
         }),
         () =>
           Effect.gen(function* () {
-            const result = yield* Effect.raceFirst(
-              background.wait({ id: nextSession.id }).pipe(Effect.map((waited) => waited.info)),
-              background.waitForPromotion(nextSession.id),
+            const outcome = yield* Effect.raceFirst(
+              Effect.raceFirst(
+                background.wait({ id: nextSession.id }).pipe(Effect.map((waited) => ({ kind: "settled" as const, info: waited.info }))),
+                background.waitForPromotion(nextSession.id).pipe(Effect.map((info) => ({ kind: "promoted" as const, info }))),
+              ),
+              background.waitForMessage(nextSession.id).pipe(Effect.map((payload) => ({ kind: "message" as const, payload }))),
             )
+            if (outcome.kind === "message") {
+              // Child is parked awaiting the parent's reply and has been backgrounded;
+              // fork notify so its eventual completion is still delivered to the parent.
+              yield* notify(nextSession.id)
+              return {
+                title: params.description,
+                metadata,
+                output: renderMessage({ sessionID: nextSession.id, body: outcome.payload.body }),
+              }
+            }
+            if (outcome.kind === "promoted") return backgroundResult()
+            const result = outcome.info
             if (result?.metadata?.background === true) return backgroundResult()
             if (result?.status === "error") return yield* Effect.fail(new Error(result.error ?? "Task failed"))
             if (result?.status === "cancelled") return yield* Effect.fail(new Error("Task cancelled"))

@@ -4,6 +4,7 @@ import { Ripgrep } from "@opencode-ai/core/ripgrep"
 import { PlanExitTool } from "./plan"
 import { Session } from "@/session/session"
 import { QuestionTool } from "./question"
+import { MessageTool } from "./message"
 import { ShellTool } from "./shell"
 import { EditTool } from "./edit"
 import { GlobTool } from "./glob"
@@ -42,6 +43,7 @@ import { Format } from "../format"
 import { InstanceState } from "@/effect/instance-state"
 import { EffectBridge } from "@/effect/bridge"
 import { Question } from "../question"
+import { Messaging } from "../messaging"
 import { Todo } from "../session/todo"
 import { LSP } from "@/lsp/lsp"
 import { Instruction } from "../session/instruction"
@@ -95,6 +97,7 @@ export const layer = Layer.effect(
     const task = yield* TaskTool
     const read = yield* ReadTool
     const question = yield* QuestionTool
+    const message = yield* MessageTool
     const todo = yield* TodoWriteTool
     const lsptool = yield* LspTool
     const plan = yield* PlanExitTool
@@ -219,6 +222,7 @@ export const layer = Layer.effect(
           skill: Tool.init(skilltool),
           patch: Tool.init(patchtool),
           question: Tool.init(question),
+          message: Tool.init(message),
           lsp: Tool.init(lsptool),
           plan: Tool.init(plan),
         })
@@ -228,6 +232,7 @@ export const layer = Layer.effect(
           builtin: [
             tool.invalid,
             ...(questionEnabled ? [tool.question] : []),
+            ...(flags.experimentalAgentMessaging ? [tool.message] : []),
             tool.shell,
             tool.read,
             tool.glob,
@@ -331,6 +336,7 @@ export const defaultLayer = Layer.suspend(() =>
       Layer.provide(Layer.mergeAll(Config.defaultLayer, MCP.defaultLayer)),
       Layer.provide(Plugin.defaultLayer),
       Layer.provide(Question.defaultLayer),
+      Layer.provide(Messaging.defaultLayer),
       Layer.provide(Todo.defaultLayer),
       Layer.provide(Skill.defaultLayer),
       Layer.provide(Agent.defaultLayer),
@@ -429,6 +435,7 @@ export const node = LayerNode.make(layer.pipe(Layer.provide(Ripgrep.defaultLayer
   Config.node,
   Plugin.node,
   Question.node,
+  Messaging.node,
   Todo.node,
   Agent.node,
   Skill.node,
