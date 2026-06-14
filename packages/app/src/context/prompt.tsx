@@ -6,7 +6,7 @@ import { createStore, type SetStoreFunction } from "solid-js/store"
 import type { FileSelection } from "@/context/file"
 import { Persist, persisted } from "@/utils/persist"
 import { useServerSDK } from "./server-sdk"
-import type { ServerScope } from "@/utils/server-scope"
+import { ScopedKey, type ServerScope } from "@/utils/server-scope"
 
 interface PartBase {
   content: string
@@ -155,15 +155,17 @@ type PromptSession = ReturnType<typeof createPromptSession>
 
 type Scope = { draftID: string } | { dir: string; id?: string }
 
-function scopeKey(scope: Scope) {
-  if ("draftID" in scope) return `draft:${scope.draftID}`
-  return `${scope.dir}:${scope.id ?? WORKSPACE_KEY}`
-}
-
 type PromptCacheEntry = {
   value: PromptSession
   dispose: VoidFunction
 }
+
+export const getPromptSessionCacheKey = (serverScope: ServerScope, scope: Scope) => {
+  if ("draftID" in scope) return `draft:${scope.draftID}`
+  return ScopedKey.from(serverScope, scope.dir, scope.id ?? WORKSPACE_KEY)
+}
+
+export const isPromptSessionReady = (session: { ready: () => boolean }) => session.ready()
 
 function promptTarget(serverScope: ServerScope, scope: Scope) {
   if ("draftID" in scope) return Persist.draft(scope.draftID, "prompt")
@@ -262,7 +264,7 @@ export const { use: usePrompt, provider: PromptProvider } = createSimpleContext(
 
     const owner = getOwner()
     const load = (scope: Scope) => {
-      const key = scopeKey(scope)
+      const key = getPromptSessionCacheKey(serverSDK.scope, scope)
       const existing = cache.get(key)
       if (existing) {
         cache.delete(key)
@@ -287,9 +289,14 @@ export const { use: usePrompt, provider: PromptProvider } = createSimpleContext(
       load(search.draftId ? { draftID: search.draftId } : { dir: params.dir!, id: params.id }),
     )
     const pick = (scope?: Scope) => (scope ? load(scope) : session())
+    const ready = Object.assign(() => isPromptSessionReady(session()), {
+      get promise() {
+        return session().ready.promise
+      },
+    })
 
     return {
-      ready: () => session().ready,
+      ready,
       current: () => session().current(),
       cursor: () => session().cursor(),
       dirty: () => session().dirty(),
