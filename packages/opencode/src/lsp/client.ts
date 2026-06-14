@@ -249,7 +249,7 @@ export async function create(input: {
         },
       },
     }),
-    INITIALIZE_TIMEOUT_MS,
+    input.server.initializeTimeout ?? INITIALIZE_TIMEOUT_MS,
   ).catch((err) => {
     throw new InitializeError({ serverID: input.serverID, cause: err })
   })
