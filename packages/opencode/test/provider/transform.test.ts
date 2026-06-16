@@ -586,6 +586,88 @@ describe("ProviderTransform.options - gpt-5 textVerbosity", () => {
     expect(result.tools.lookup.strict).toBe(false)
   })
 
+  test("DeepSeek appends the current date to the trailing user message instead of system", async () => {
+    const model = {
+      id: "deepseek/deepseek-chat",
+      providerID: "deepseek",
+      api: {
+        id: "deepseek-chat",
+        url: "https://api.deepseek.com",
+        npm: "@ai-sdk/openai-compatible",
+      },
+      name: "DeepSeek Chat",
+      capabilities: {
+        temperature: true,
+        reasoning: true,
+        attachment: true,
+        toolcall: true,
+        input: { text: true, audio: false, image: true, video: false, pdf: true },
+        output: { text: true, audio: false, image: false, video: false, pdf: false },
+        interleaved: {
+          field: "reasoning_content",
+        },
+      },
+      cost: {
+        input: 0.001,
+        output: 0.002,
+        cache: { read: 0.0001, write: 0.0002 },
+      },
+      limit: {
+        context: 128000,
+        output: 8192,
+      },
+      status: "active",
+      options: {},
+      headers: {},
+    } as any
+    const result = await Effect.runPromise(
+      LLMRequestPrep.prepare({
+        user: {
+          id: "msg_user-test",
+          sessionID,
+          role: "user",
+          time: { created: Date.now() },
+          agent: "test",
+          model: { providerID: "deepseek", modelID: "deepseek-chat" },
+        } as any,
+        sessionID,
+        model,
+        agent: {
+          name: "test",
+          mode: "primary",
+          options: {},
+          permission: [],
+        } as any,
+        // PR #19961 moved system assembly to callers, so pass the final system
+        // prompt directly instead of relying on prepare() to build it.
+        system: ["You are a helpful assistant."],
+        messages: [{ role: "user", content: "Hello" }],
+        tools: {},
+        provider: { id: "deepseek", options: {} } as any,
+        auth: undefined,
+        plugin: {
+          trigger: (_name: string, _input: unknown, output: unknown) => Effect.succeed(output),
+          list: () => Effect.succeed([]),
+          init: () => Effect.void,
+        } as any,
+        flags: { outputTokenMax: 32_000, client: "test" } as any,
+        isWorkflow: false,
+      }),
+    )
+
+    expect(result.messages.at(-1)).toEqual({
+      role: "user",
+      content: [
+        { type: "text", text: "Hello" },
+        { type: "text", text: `Today's date: ${new Date().toDateString()}` },
+      ],
+    })
+    expect(result.messages[0]).toEqual({
+      role: "system",
+      content: expect.stringContaining("You are"),
+    })
+  })
+
   test("gpt-5.1 should have textVerbosity set to low", () => {
     const model = createGpt5Model("gpt-5.1")
     const result = ProviderTransform.options({ model, sessionID, providerOptions: {} })
@@ -1823,6 +1905,118 @@ describe("ProviderTransform.message - Mistral tool call IDs", () => {
 })
 
 describe("ProviderTransform.message - DeepSeek reasoning content", () => {
+  const deepSeekModel = (overrides: Partial<any> = {}) =>
+    ({
+      id: ModelV2.ID.make("deepseek/deepseek-chat"),
+      providerID: ProviderV2.ID.make("deepseek"),
+      api: {
+        id: "deepseek-chat",
+        url: "https://api.deepseek.com",
+        npm: "@ai-sdk/openai-compatible",
+      },
+      name: "DeepSeek Chat",
+      capabilities: {
+        temperature: true,
+        reasoning: true,
+        attachment: false,
+        toolcall: true,
+        input: { text: true, audio: false, image: false, video: false, pdf: false },
+        output: { text: true, audio: false, image: false, video: false, pdf: false },
+        interleaved: {
+          field: "reasoning_content",
+        },
+      },
+      cost: {
+        input: 0.001,
+        output: 0.002,
+        cache: { read: 0.0001, write: 0.0002 },
+      },
+      limit: {
+        context: 128000,
+        output: 8192,
+      },
+      status: "active",
+      options: {},
+      headers: {},
+      release_date: "2023-04-01",
+      ...overrides,
+    }) as any
+
+  test("DeepSeek omits reasoning_content for assistant replies without tools in the user turn", () => {
+    const result = ProviderTransform.message(
+      [
+        {
+          role: "user",
+          content: "Hello",
+        },
+        {
+          role: "assistant",
+          content: [
+            { type: "reasoning", text: "This should not be replayed." },
+            { type: "text", text: "Answer" },
+          ],
+        },
+      ] as any[],
+      deepSeekModel(),
+      {},
+    )
+
+    expect(result[1].content).toEqual([{ type: "text", text: "Answer" }])
+    expect(result[1].providerOptions?.openaiCompatible?.reasoning_content).toBeUndefined()
+  })
+
+  test("DeepSeek replays reasoning_content across the full assistant tool turn", () => {
+    const result = ProviderTransform.message(
+      [
+        {
+          role: "user",
+          content: "Check the repo",
+        },
+        {
+          role: "assistant",
+          content: [
+            { type: "reasoning", text: "Need to inspect files first." },
+            {
+              type: "tool-call",
+              toolCallId: "call-1",
+              toolName: "bash",
+              input: { command: "pwd" },
+            },
+          ],
+        },
+        {
+          role: "tool",
+          content: [
+            {
+              type: "tool-result",
+              toolCallId: "call-1",
+              toolName: "bash",
+              output: { type: "text", value: "/repo" },
+            },
+          ],
+        },
+        {
+          role: "assistant",
+          content: [{ type: "text", text: "The repo is at /repo." }],
+        },
+      ] as any[],
+      deepSeekModel(),
+      {},
+    )
+
+    expect(result[1].content).toEqual([
+      {
+        type: "tool-call",
+        toolCallId: "call-1",
+        toolName: "bash",
+        input: { command: "pwd" },
+      },
+    ])
+    expect(result[1].providerOptions?.openaiCompatible?.reasoning_content).toBe("Need to inspect files first.")
+    expect(result[3].content).toEqual([{ type: "text", text: "The repo is at /repo." }])
+    expect(result[3].providerOptions?.openaiCompatible?.reasoning_content).toBe("")
+  })
+
   test("DeepSeek with tool calls includes reasoning_content in providerOptions", () => {
     const msgs = [
       {
