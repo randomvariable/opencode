@@ -1236,6 +1236,7 @@ const layer = Layer.effect(
               Effect.provideService(Permission.Service, permission),
               Effect.provideService(ToolRegistry.Service, registry),
               Effect.provideService(MCP.Service, mcp),
+              Effect.provideService(Config.Service, config),
               Effect.provideService(Truncate.Service, truncate),
               Effect.provideService(RuntimeFlags.Service, flags),
             )
@@ -1261,11 +1262,30 @@ const layer = Layer.effect(
               sys.mcp(agent, session.permission),
               MessageV2.toModelMessagesEffect(msgs, model),
             ])
+            // When MCP lazy loading is enabled, advertise connected servers so the
+            // model knows to reach for the mcp_search tool instead of inlined MCP tools.
+            const mcpServersPrompt = yield* Effect.gen(function* () {
+              if ((yield* config.get()).experimental?.mcp_lazy !== true) return [] as string[]
+              const status = yield* mcp.status()
+              const servers = Object.entries(status)
+                .filter(([, s]) => s.status === "connected")
+                .map(([name]) => name)
+              if (servers.length === 0) return [] as string[]
+              return [
+                [
+                  `<mcp_servers>`,
+                  `Available MCP servers: ${servers.join(", ")}`,
+                  `Use mcp_search tool to discover and call tools from these servers.`,
+                  `</mcp_servers>`,
+                ].join("\n"),
+              ]
+            })
             const system = [
               ...env,
               ...instructions,
               ...(mcpInstructions ? [mcpInstructions] : []),
               ...(skills ? [skills] : []),
+              ...mcpServersPrompt,
             ]
             const format = lastUser.format ?? { type: "text" as const }
             if (format.type === "json_schema") system.push(STRUCTURED_OUTPUT_SYSTEM_PROMPT)

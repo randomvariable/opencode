@@ -19,6 +19,7 @@ import { Session } from "./session"
 import { SessionProcessor } from "./processor"
 import { PartID } from "./schema"
 import { EffectBridge } from "@/effect/bridge"
+import { Config } from "@/config/config"
 import { ProviderV2 } from "@opencode-ai/core/provider"
 import { ModelV2 } from "@opencode-ai/core/model"
 import { isRecord } from "@/util/record"
@@ -53,6 +54,7 @@ export const resolve = Effect.fn("SessionTools.resolve")(function* (input: {
   const permission = yield* Permission.Service
   const registry = yield* ToolRegistry.Service
   const mcp = yield* MCP.Service
+  const config = yield* Config.Service
   const truncate = yield* Truncate.Service
   const flags = yield* RuntimeFlags.Service
 
@@ -387,8 +389,8 @@ export const resolve = Effect.fn("SessionTools.resolve")(function* (input: {
 
   if (flags.experimentalCodeMode) return tools
 
-  for (const [key, entry] of Object.entries(yield* mcp.tools())) {
-    const item = McpCatalog.convertTool(entry.def, entry.client, entry.timeout)
+  const mcpLazy = (yield* config.get()).experimental?.mcp_lazy === true
+  for (const [key, item] of mcpLazy ? [] : Object.entries(yield* mcp.tools())) {
     const execute = item.execute
     if (!execute) continue
 

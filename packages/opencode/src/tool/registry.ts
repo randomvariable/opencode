@@ -29,10 +29,13 @@ import { WebSearchTool } from "./websearch"
 import { LspTool } from "./lsp"
 import * as Truncate from "./truncate"
 import { ApplyPatchTool } from "./apply_patch"
+import { McpSearchTool } from "./mcp-search"
+import { MCP } from "../mcp"
 import { Glob } from "@opencode-ai/core/util/glob"
 import path from "path"
 import { pathToFileURL } from "url"
-import { Effect, Layer, Context } from "effect"
+import { Effect, Layer, Context, Option } from "effect"
+import { FetchHttpClient, HttpClient } from "effect/unstable/http"
 import { ChildProcessSpawner } from "effect/unstable/process/ChildProcessSpawner"
 import { CrossSpawnSpawner } from "@opencode-ai/core/cross-spawn-spawner"
 import { Format } from "../format"
@@ -109,6 +112,8 @@ const layer = Layer.effect(
     const greptool = yield* GrepTool
     const patchtool = yield* ApplyPatchTool
     const skilltool = yield* SkillTool
+    const mcpServiceOpt = yield* Effect.serviceOption(MCP.Service)
+    const mcpsearch = Option.isSome(mcpServiceOpt) ? yield* McpSearchTool : undefined
     const agent = yield* Agent.Service
     const codeMode = flags.experimentalCodeMode ? yield* Effect.promise(() => import("./code-mode")) : undefined
     const codeModeTool = codeMode ? yield* codeMode.CodeModeTool : undefined
@@ -198,8 +203,11 @@ const layer = Layer.effect(
           }
         }
 
-        yield* config.get()
+        const cfg = yield* config.get()
         const questionEnabled = ["app", "cli", "desktop"].includes(flags.client) || flags.enableQuestionTool
+
+        const mcpLazyEnabled = cfg.experimental?.mcp_lazy === true
+        const mcpsearchDef: Tool.Def[] = mcpLazyEnabled && mcpsearch ? [yield* Tool.init(mcpsearch)] : []
 
         const tool = yield* Effect.all({
           invalid: Tool.init(invalid),
@@ -241,6 +249,7 @@ const layer = Layer.effect(
             ...(tool.execute ? [tool.execute] : []),
             ...(flags.experimentalLspTool ? [tool.lsp] : []),
             ...(flags.experimentalPlanMode && flags.client === "cli" ? [tool.plan] : []),
+            ...mcpsearchDef,
           ],
           task: tool.task,
           read: tool.read,
@@ -343,6 +352,30 @@ const layer = Layer.effect(
   }),
 )
 
+export const defaultLayer = Layer.suspend(() =>
+  layer
+    .pipe(
+      Layer.provide(Layer.mergeAll(Config.defaultLayer, MCP.defaultLayer)),
+      Layer.provide(Plugin.defaultLayer),
+      Layer.provide(Question.defaultLayer),
+      Layer.provide(Todo.defaultLayer),
+      Layer.provide(Skill.defaultLayer),
+      Layer.provide(Agent.defaultLayer),
+      Layer.provide(Session.defaultLayer),
+      Layer.provide(BackgroundJob.defaultLayer),
+      Layer.provide(Provider.defaultLayer),
+      Layer.provide(LSP.defaultLayer),
+      Layer.provide(Instruction.defaultLayer),
+      Layer.provide(FSUtil.defaultLayer),
+      Layer.provide(EventV2Bridge.defaultLayer),
+      Layer.provide(FetchHttpClient.layer),
+      Layer.provide(Format.defaultLayer),
+      Layer.provide(CrossSpawnSpawner.defaultLayer),
+      Layer.provide(Truncate.defaultLayer),
+    )
+    .pipe(Layer.provide(Database.defaultLayer), Layer.provide(RuntimeFlags.defaultLayer)),
+)
+
 function isZodType(value: unknown): value is z.ZodType {
   return typeof value === "object" && value !== null && "_zod" in value
 }
@@ -424,6 +457,7 @@ export const node = LayerNode.make({
   layer,
   deps: [
     Config.node,
+    MCP.node,
     Plugin.node,
     Question.node,
     Todo.node,

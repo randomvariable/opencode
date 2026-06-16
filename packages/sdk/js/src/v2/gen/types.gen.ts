@@ -1671,6 +1671,7 @@ export type PermissionConfig =
       question?: PermissionActionConfig
       webfetch?: PermissionActionConfig
       websearch?: PermissionActionConfig
+      model_override?: PermissionRuleConfig
       lsp?: PermissionRuleConfig
       doom_loop?: PermissionActionConfig
       skill?: PermissionRuleConfig
@@ -2019,6 +2020,7 @@ export type Config = {
     primary_tools?: Array<string>
     continue_loop_on_deny?: boolean
     mcp_timeout?: number
+    mcp_lazy?: boolean
     policies?: Array<ConfigV2ExperimentalPolicy>
   }
 }
@@ -9456,6 +9458,7 @@ export type SessionCreateData = {
     }
     permission?: PermissionRuleset
     workspaceID?: string
+    id?: string
   }
   path?: never
   query?: {
