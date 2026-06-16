@@ -39,10 +39,20 @@ function rewriteRequest(request: Request, serverUrl: URL) {
   return new Request(new URL(`${url.pathname}${url.search}`, serverUrl), request)
 }
 
+export function pluginClientReentryResponse(directory: string) {
+  return new Response(`Plugin client request cannot enter instance ${directory} while its plugins are still loading`, {
+    status: 409,
+    headers: {
+      "content-type": "text/plain; charset=utf-8",
+    },
+  })
+}
+
 export function createPluginClient(input: {
   directory: string
   getServerUrl: () => URL
   fallbackFetch: ClientFetch
+  isBootstrapping?: () => boolean
 }) {
   return createOpencodeClient({
     baseUrl: "http://localhost",
@@ -52,8 +62,14 @@ export function createPluginClient(input: {
   })
 }
 
-export function createPluginFetch(input: { getServerUrl: () => URL; fallbackFetch: ClientFetch }): ClientFetch {
+export function createPluginFetch(input: {
+  directory?: string
+  getServerUrl: () => URL
+  fallbackFetch: ClientFetch
+  isBootstrapping?: () => boolean
+}): ClientFetch {
   return async (request: Request) => {
+    if (input.isBootstrapping?.()) return pluginClientReentryResponse(input.directory ?? "")
     const serverUrl = input.getServerUrl()
     if (await useLiveServer(serverUrl)) {
       const key = normalizeServerUrl(serverUrl)

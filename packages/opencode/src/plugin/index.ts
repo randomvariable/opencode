@@ -148,10 +148,12 @@ const layer = Layer.effect(
         const { Server } = yield* Effect.promise(() => import("../server/server"))
 
         const getServerUrl = () => Server.url ?? new URL("http://localhost:4096")
+        let bootstrapping = true
         const client = createPluginClient({
           directory: ctx.directory,
           getServerUrl,
           fallbackFetch: async (request) => Server.Default().app.fetch(request),
+          isBootstrapping: () => bootstrapping,
         })
         const cfg = yield* config.get()
         const input: PluginInput = {
@@ -251,6 +253,8 @@ const layer = Layer.effect(
             Effect.ignore,
           )
         }
+
+        bootstrapping = false
 
         const unsubscribe = yield* events.listen((event) => {
           if (event.location?.directory !== ctx.directory) return Effect.void
