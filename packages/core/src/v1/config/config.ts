@@ -186,6 +186,10 @@ export const Info = Schema.Struct({
         description:
           "Enable lazy loading of MCP tools. When enabled, MCP tools are not loaded into context automatically. Instead, use the mcp_search tool to discover and call MCP tools on-demand.",
       }),
+      subagent_interrupt: Schema.optional(Schema.Boolean).annotate({
+        description:
+          "Enable the subagent interrupt HTTP endpoint and TUI esc-with-reason UX. Server-controlled; reflects the OPENCODE_EXPERIMENTAL_SUBAGENT_INTERRUPT runtime flag.",
+      }),
       policies: Schema.optional(Schema.mutable(Schema.Array(ConfigExperimental.Policy))).annotate({
         description: "Policy statements applied to supported resources, such as provider access",
       }),
