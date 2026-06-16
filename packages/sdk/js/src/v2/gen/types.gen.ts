@@ -9,13 +9,6 @@ export type Event =
   | EventIntegrationUpdated
   | EventIntegrationConnectionUpdated
   | EventCatalogUpdated
-  | EventSessionCreated
-  | EventSessionUpdated
-  | EventSessionDeleted
-  | EventMessageUpdated
-  | EventMessageRemoved
-  | EventMessagePartUpdated
-  | EventMessagePartRemoved
   | EventSessionNextAgentSwitched
   | EventSessionNextModelSwitched
   | EventSessionNextMoved
@@ -48,9 +41,15 @@ export type Event =
   | EventSessionNextRevertStaged
   | EventSessionNextRevertCleared
   | EventSessionNextRevertCommitted
+  | EventSessionCreated
+  | EventSessionUpdated
+  | EventSessionDeleted
+  | EventMessageUpdated
+  | EventMessageRemoved
+  | EventMessagePartUpdated
+  | EventMessagePartRemoved
   | EventMessagePartDelta
-  | EventSessionDiff
-  | EventSessionError
+  | EventPluginError
   | EventInstallationUpdated
   | EventInstallationUpdateAvailable
   | EventFileEdited
@@ -71,6 +70,8 @@ export type Event =
   | EventLspUpdated
   | EventPermissionAsked
   | EventPermissionReplied
+  | EventSessionDiff
+  | EventSessionError
   | EventTuiPromptAppend2
   | EventTuiCommandExecute2
   | EventTuiToastShow2
@@ -147,6 +148,12 @@ export type MoveSessionError = {
   data: {
     message: string
   }
+}
+
+export type Prompt = {
+  text: string
+  files?: Array<PromptFileAttachment>
+  agents?: Array<PromptAgentAttachment>
 }
 
 export type SnapshotFileDiff = {
@@ -638,12 +645,6 @@ export type Part =
   | RetryPart
   | CompactionPart
 
-export type Prompt = {
-  text: string
-  files?: Array<PromptFileAttachment>
-  agents?: Array<PromptAgentAttachment>
-}
-
 export type Pty = {
   id: string
   title: string
@@ -758,64 +759,6 @@ export type GlobalEvent = {
         type: "catalog.updated"
         properties: {
           [key: string]: unknown
-        }
-      }
-    | {
-        id: string
-        type: "session.created"
-        properties: {
-          sessionID: string
-          info: Session
-        }
-      }
-    | {
-        id: string
-        type: "session.updated"
-        properties: {
-          sessionID: string
-          info: Session
-        }
-      }
-    | {
-        id: string
-        type: "session.deleted"
-        properties: {
-          sessionID: string
-          info: Session
-        }
-      }
-    | {
-        id: string
-        type: "message.updated"
-        properties: {
-          sessionID: string
-          info: Message
-        }
-      }
-    | {
-        id: string
-        type: "message.removed"
-        properties: {
-          sessionID: string
-          messageID: string
-        }
-      }
-    | {
-        id: string
-        type: "message.part.updated"
-        properties: {
-          sessionID: string
-          part: Part
-          time: number
-        }
-      }
-    | {
-        id: string
-        type: "message.part.removed"
-        properties: {
-          sessionID: string
-          messageID: string
-          partID: string
         }
       }
     | {
@@ -1171,6 +1114,10 @@ export type GlobalEvent = {
           timestamp: number
           sessionID: string
           revert: RevertState
+        type: "session.created"
+        properties: {
+          sessionID: string
+          info: Session
         }
       }
     | {
@@ -1179,6 +1126,10 @@ export type GlobalEvent = {
         properties: {
           timestamp: number
           sessionID: string
+        type: "session.updated"
+        properties: {
+          sessionID: string
+          info: Session
         }
       }
     | {
@@ -1186,8 +1137,44 @@ export type GlobalEvent = {
         type: "session.next.revert.committed"
         properties: {
           timestamp: number
+        type: "session.deleted"
+        properties: {
+          sessionID: string
+          info: Session
+        }
+      }
+    | {
+        id: string
+        type: "message.updated"
+        properties: {
+          sessionID: string
+          info: Message
+        }
+      }
+    | {
+        id: string
+        type: "message.removed"
+        properties: {
           sessionID: string
           messageID: string
+        }
+      }
+    | {
+        id: string
+        type: "message.part.updated"
+        properties: {
+          sessionID: string
+          part: Part
+          time: number
+        }
+      }
+    | {
+        id: string
+        type: "message.part.removed"
+        properties: {
+          sessionID: string
+          messageID: string
+          partID: string
         }
       }
     | {
@@ -1203,26 +1190,9 @@ export type GlobalEvent = {
       }
     | {
         id: string
-        type: "session.diff"
+        type: "plugin.error"
         properties: {
-          sessionID: string
-          diff: Array<SnapshotFileDiff>
-        }
-      }
-    | {
-        id: string
-        type: "session.error"
-        properties: {
-          sessionID?: string
-          error?:
-            | ProviderAuthError
-            | UnknownError
-            | MessageOutputLengthError
-            | MessageAbortedError
-            | StructuredOutputError
-            | ContextOverflowError
-            | ContentFilterError
-            | ApiError
+          message: string
         }
       }
     | {
@@ -1398,6 +1368,30 @@ export type GlobalEvent = {
           sessionID: string
           requestID: string
           reply: "once" | "always" | "reject"
+        }
+      }
+    | {
+        id: string
+        type: "session.diff"
+        properties: {
+          sessionID: string
+          diff: Array<SnapshotFileDiff>
+        }
+      }
+    | {
+        id: string
+        type: "session.error"
+        properties: {
+          sessionID?: string
+          error?:
+            | ProviderAuthError
+            | UnknownError
+            | MessageOutputLengthError
+            | MessageAbortedError
+            | StructuredOutputError
+            | ContextOverflowError
+            | ContentFilterError
+            | ApiError
         }
       }
     | {
@@ -1601,13 +1595,6 @@ export type GlobalEvent = {
         }
       }
     | EventServerInstanceDisposed
-    | SyncEventSessionCreated
-    | SyncEventSessionUpdated
-    | SyncEventSessionDeleted
-    | SyncEventMessageUpdated
-    | SyncEventMessageRemoved
-    | SyncEventMessagePartUpdated
-    | SyncEventMessagePartRemoved
     | SyncEventSessionNextAgentSwitched
     | SyncEventSessionNextModelSwitched
     | SyncEventSessionNextMoved
@@ -1636,6 +1623,13 @@ export type GlobalEvent = {
     | SyncEventSessionNextRevertStaged
     | SyncEventSessionNextRevertCleared
     | SyncEventSessionNextRevertCommitted
+    | SyncEventSessionCreated
+    | SyncEventSessionUpdated
+    | SyncEventSessionDeleted
+    | SyncEventMessageUpdated
+    | SyncEventMessageRemoved
+    | SyncEventMessagePartUpdated
+    | SyncEventMessagePartRemoved
 }
 
 /**
@@ -3191,113 +3185,6 @@ export type EventServerInstanceDisposed = {
   }
 }
 
-export type SyncEventSessionCreated = {
-  type: "sync"
-  id: string
-  syncEvent: {
-    type: "session.created.1"
-    id: string
-    seq: number
-    aggregateID: string
-    data: {
-      sessionID: string
-      info: Session
-    }
-  }
-}
-
-export type SyncEventSessionUpdated = {
-  type: "sync"
-  id: string
-  syncEvent: {
-    type: "session.updated.1"
-    id: string
-    seq: number
-    aggregateID: string
-    data: {
-      sessionID: string
-      info: Session
-    }
-  }
-}
-
-export type SyncEventSessionDeleted = {
-  type: "sync"
-  id: string
-  syncEvent: {
-    type: "session.deleted.1"
-    id: string
-    seq: number
-    aggregateID: string
-    data: {
-      sessionID: string
-      info: Session
-    }
-  }
-}
-
-export type SyncEventMessageUpdated = {
-  type: "sync"
-  id: string
-  syncEvent: {
-    type: "message.updated.1"
-    id: string
-    seq: number
-    aggregateID: string
-    data: {
-      sessionID: string
-      info: Message
-    }
-  }
-}
-
-export type SyncEventMessageRemoved = {
-  type: "sync"
-  id: string
-  syncEvent: {
-    type: "message.removed.1"
-    id: string
-    seq: number
-    aggregateID: string
-    data: {
-      sessionID: string
-      messageID: string
-    }
-  }
-}
-
-export type SyncEventMessagePartUpdated = {
-  type: "sync"
-  id: string
-  syncEvent: {
-    type: "message.part.updated.1"
-    id: string
-    seq: number
-    aggregateID: string
-    data: {
-      sessionID: string
-      part: Part
-      time: number
-    }
-  }
-}
-
-export type SyncEventMessagePartRemoved = {
-  type: "sync"
-  id: string
-  syncEvent: {
-    type: "message.part.removed.1"
-    id: string
-    seq: number
-    aggregateID: string
-    data: {
-      sessionID: string
-      messageID: string
-      partID: string
-    }
-  }
-}
-
 export type SyncEventSessionNextAgentSwitched = {
   type: "sync"
   id: string
@@ -3781,6 +3668,11 @@ export type SyncEventSessionNextRevertStaged = {
   id: string
   syncEvent: {
     type: "session.next.revert.staged.1"
+export type SyncEventSessionCreated = {
+  type: "sync"
+  id: string
+  syncEvent: {
+    type: "session.created.1"
     id: string
     seq: number
     aggregateID: string
@@ -3788,6 +3680,8 @@ export type SyncEventSessionNextRevertStaged = {
       timestamp: number
       sessionID: string
       revert: RevertState
+      sessionID: string
+      info: Session
     }
   }
 }
@@ -3797,12 +3691,19 @@ export type SyncEventSessionNextRevertCleared = {
   id: string
   syncEvent: {
     type: "session.next.revert.cleared.1"
+export type SyncEventSessionUpdated = {
+  type: "sync"
+  id: string
+  syncEvent: {
+    type: "session.updated.1"
     id: string
     seq: number
     aggregateID: string
     data: {
       timestamp: number
       sessionID: string
+      sessionID: string
+      info: Session
     }
   }
 }
@@ -3812,6 +3713,41 @@ export type SyncEventSessionNextRevertCommitted = {
   id: string
   syncEvent: {
     type: "session.next.revert.committed.1"
+export type SyncEventSessionDeleted = {
+  type: "sync"
+  id: string
+  syncEvent: {
+    type: "session.deleted.1"
+    id: string
+    seq: number
+    aggregateID: string
+    data: {
+      sessionID: string
+      info: Session
+    }
+  }
+}
+
+export type SyncEventMessageUpdated = {
+  type: "sync"
+  id: string
+  syncEvent: {
+    type: "message.updated.1"
+    id: string
+    seq: number
+    aggregateID: string
+    data: {
+      sessionID: string
+      info: Message
+    }
+  }
+}
+
+export type SyncEventMessageRemoved = {
+  type: "sync"
+  id: string
+  syncEvent: {
+    type: "message.removed.1"
     id: string
     seq: number
     aggregateID: string
@@ -3819,6 +3755,38 @@ export type SyncEventSessionNextRevertCommitted = {
       timestamp: number
       sessionID: string
       messageID: string
+    }
+  }
+}
+
+export type SyncEventMessagePartUpdated = {
+  type: "sync"
+  id: string
+  syncEvent: {
+    type: "message.part.updated.1"
+    id: string
+    seq: number
+    aggregateID: string
+    data: {
+      sessionID: string
+      part: Part
+      time: number
+    }
+  }
+}
+
+export type SyncEventMessagePartRemoved = {
+  type: "sync"
+  id: string
+  syncEvent: {
+    type: "message.part.removed.1"
+    id: string
+    seq: number
+    aggregateID: string
+    data: {
+      sessionID: string
+      messageID: string
+      partID: string
     }
   }
 }
@@ -6183,71 +6151,6 @@ export type EventCatalogUpdated = {
   }
 }
 
-export type EventSessionCreated = {
-  id: string
-  type: "session.created"
-  properties: {
-    sessionID: string
-    info: Session
-  }
-}
-
-export type EventSessionUpdated = {
-  id: string
-  type: "session.updated"
-  properties: {
-    sessionID: string
-    info: Session
-  }
-}
-
-export type EventSessionDeleted = {
-  id: string
-  type: "session.deleted"
-  properties: {
-    sessionID: string
-    info: Session
-  }
-}
-
-export type EventMessageUpdated = {
-  id: string
-  type: "message.updated"
-  properties: {
-    sessionID: string
-    info: Message
-  }
-}
-
-export type EventMessageRemoved = {
-  id: string
-  type: "message.removed"
-  properties: {
-    sessionID: string
-    messageID: string
-  }
-}
-
-export type EventMessagePartUpdated = {
-  id: string
-  type: "message.part.updated"
-  properties: {
-    sessionID: string
-    part: Part
-    time: number
-  }
-}
-
-export type EventMessagePartRemoved = {
-  id: string
-  type: "message.part.removed"
-  properties: {
-    sessionID: string
-    messageID: string
-    partID: string
-  }
-}
-
 export type EventSessionNextAgentSwitched = {
   id: string
   type: "session.next.agent.switched"
@@ -6647,8 +6550,68 @@ export type EventSessionNextRevertCommitted = {
   type: "session.next.revert.committed"
   properties: {
     timestamp: number
+export type EventSessionCreated = {
+  id: string
+  type: "session.created"
+  properties: {
+    sessionID: string
+    info: Session
+  }
+}
+
+export type EventSessionUpdated = {
+  id: string
+  type: "session.updated"
+  properties: {
+    sessionID: string
+    info: Session
+  }
+}
+
+export type EventSessionDeleted = {
+  id: string
+  type: "session.deleted"
+  properties: {
+    sessionID: string
+    info: Session
+  }
+}
+
+export type EventMessageUpdated = {
+  id: string
+  type: "message.updated"
+  properties: {
+    sessionID: string
+    info: Message
+  }
+}
+
+export type EventMessageRemoved = {
+  id: string
+  type: "message.removed"
+  properties: {
     sessionID: string
     messageID: string
+  }
+}
+
+export type EventMessagePartUpdated = {
+  id: string
+  type: "message.part.updated"
+  properties: {
+    sessionID: string
+    part: Part
+    time: number
+  }
+}
+
+export type EventMessagePartRemoved = {
+  id: string
+  type: "message.part.removed"
+  properties: {
+    sessionID: string
+    messageID: string
+    partID: string
   }
 }
 
@@ -6664,29 +6627,11 @@ export type EventMessagePartDelta = {
   }
 }
 
-export type EventSessionDiff = {
+export type EventPluginError = {
   id: string
-  type: "session.diff"
+  type: "plugin.error"
   properties: {
-    sessionID: string
-    diff: Array<SnapshotFileDiff>
-  }
-}
-
-export type EventSessionError = {
-  id: string
-  type: "session.error"
-  properties: {
-    sessionID?: string
-    error?:
-      | ProviderAuthError
-      | UnknownError
-      | MessageOutputLengthError
-      | MessageAbortedError
-      | StructuredOutputError
-      | ContextOverflowError
-      | ContentFilterError
-      | ApiError
+    message: string
   }
 }
 
@@ -6882,6 +6827,32 @@ export type EventPermissionReplied = {
     sessionID: string
     requestID: string
     reply: "once" | "always" | "reject"
+  }
+}
+
+export type EventSessionDiff = {
+  id: string
+  type: "session.diff"
+  properties: {
+    sessionID: string
+    diff: Array<SnapshotFileDiff>
+  }
+}
+
+export type EventSessionError = {
+  id: string
+  type: "session.error"
+  properties: {
+    sessionID?: string
+    error?:
+      | ProviderAuthError
+      | UnknownError
+      | MessageOutputLengthError
+      | MessageAbortedError
+      | StructuredOutputError
+      | ContextOverflowError
+      | ContentFilterError
+      | ApiError
   }
 }
 

@@ -1028,6 +1028,15 @@ function App(props: { onSnapshot?: () => Promise<string[]>; pluginHost: TuiPlugi
     })
   })
 
+  event.on("plugin.error", (evt) => {
+    toast.show({
+      variant: "error",
+      title: "Plugin error",
+      message: evt.properties.message,
+      duration: 8000,
+    })
+  })
+
   event.on("installation.update-available", async (evt) => {
     console.log("installation.update-available", evt)
     const version = evt.properties.version
