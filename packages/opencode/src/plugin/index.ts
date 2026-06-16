@@ -7,8 +7,6 @@ import type {
   WorkspaceAdapter as PluginWorkspaceAdapter,
 } from "@opencode-ai/plugin"
 import { Config } from "@/config/config"
-import { createOpencodeClient } from "@opencode-ai/sdk"
-import { ServerAuth } from "@/server/auth"
 import { CodexAuthPlugin } from "./openai/codex"
 import { CopilotAuthPlugin } from "./github-copilot/copilot"
 import { ModalPlugin } from "./modal/modal"
@@ -31,6 +29,7 @@ import { RuntimeFlags } from "@/effect/runtime-flags"
 import { EventV2Bridge } from "@/event-v2-bridge"
 import { InstallationChannel } from "@opencode-ai/core/installation/version"
 import { EventV2 } from "@opencode-ai/core/event"
+import { createPluginClient } from "./client"
 
 export const Event = {
   Error: EventV2.define({
@@ -148,12 +147,11 @@ const layer = Layer.effect(
 
         const { Server } = yield* Effect.promise(() => import("../server/server"))
 
-        const serverUrl = Server.url
-        const client = createOpencodeClient({
-          baseUrl: serverUrl?.toString() ?? "http://localhost:4096",
+        const getServerUrl = () => Server.url ?? new URL("http://localhost:4096")
+        const client = createPluginClient({
           directory: ctx.directory,
-          headers: ServerAuth.headers(),
-          ...(serverUrl ? {} : { fetch: async (...args) => Server.Default().app.fetch(...args) }),
+          getServerUrl,
+          fallbackFetch: async (request) => Server.Default().app.fetch(request),
         })
         const cfg = yield* config.get()
         const input: PluginInput = {
@@ -167,7 +165,7 @@ const layer = Layer.effect(
             },
           },
           get serverUrl(): URL {
-            return Server.url ?? new URL("http://localhost:4096")
+            return getServerUrl()
           },
           // @ts-expect-error
           $: typeof Bun === "undefined" ? undefined : Bun.$,
