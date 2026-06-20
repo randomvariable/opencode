@@ -1,0 +1,35 @@
+packages/core/src/session/projector.ts
+  s_3ace835395c728::t_5601855f0042e2 321-330
+packages/core/src/event.ts
+  s_4390f1f133003a::t_7cb934e75beb91 369-379
+packages/core/test/session-projector.test.ts
+  s_3ace835395c728::t_5473aa3696af89 626-634,636-637,639-653,661,663,665-682,684-687
+  s_3ace835395c728::t_668ef17dfbe568 28
+  s_3ace835395c728::t_944395feb27b86 635,654-660,662,664
+  s_4390f1f133003a::t_7cb934e75beb91 21-27,683
+  s_3ace835395c728::t_b6bcc6c02c59e8 638
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "0d047d17cba6937fb25f846cb8d64cb927426123",
+  "prompts": {},
+  "sessions": {
+    "s_3ace835395c728": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_119ae49b7ffe2cDhh5arupVmcq",
+        "model": "unknown"
+      },
+      "human_author": "Naadir Jeewa <naadir@randomvariable.co.uk>"
+    },
+    "s_4390f1f133003a": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_119ccf8b0ffezcx6vqCa8m5SWU",
+        "model": "unknown"
+      },
+      "human_author": "Naadir Jeewa <naadir@randomvariable.co.uk>"
+    }
+  }
+}
