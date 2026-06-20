@@ -1,0 +1,19 @@
+packages/core/src/database/schema.gen.ts
+  s_4390f1f133003a::t_c5132ec6690d8c 244-245,248-253
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "ace503bd82345a3705414b5557fabeb448562014",
+  "prompts": {},
+  "sessions": {
+    "s_4390f1f133003a": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_119ccf8b0ffezcx6vqCa8m5SWU",
+        "model": "unknown"
+      },
+      "human_author": "Naadir Jeewa <naadir@randomvariable.co.uk>"
+    }
+  }
+}
