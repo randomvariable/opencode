@@ -104,8 +104,20 @@ const layer = Layer.effect(
         .pipe(Effect.catchTag("RunnerBusy", () => Effect.fail(busyError(sessionID))))
     })
 
+    // Quiesce an in-flight turn before its session is deleted: Session.remove
+    // runs this hook (cancel awaits the runner fiber's unwind) before publishing
+    // Deleted, closing the window where the loop reads a vanishing stream.
+    const sessions = yield* Session.Service
+    yield* sessions.onBeforeDelete((sessionID) => cancel(sessionID))
+
     return Service.of({ assertNotBusy, cancel, ensureRunning, startShell })
   }),
+)
+
+export const defaultLayer = layer.pipe(
+  Layer.provide(BackgroundJob.defaultLayer),
+  Layer.provide(SessionStatus.defaultLayer),
+  Layer.provide(Session.defaultLayer),
 )
 
 const cancelBackgroundJobs = Effect.fn("SessionRunState.cancelBackgroundJobs")(function* (
@@ -146,6 +158,6 @@ function busyError(sessionID: SessionID) {
   return new Session.BusyError({ sessionID })
 }
 
-export const node = LayerNode.make({ service: Service, layer: layer, deps: [BackgroundJob.node, SessionStatus.node] })
+export const node = LayerNode.make({ service: Service, layer: layer, deps: [BackgroundJob.node, SessionStatus.node, Session.node] })
 
 export * as SessionRunState from "./run-state"

@@ -45,6 +45,7 @@ import { decodeDataUrl } from "@/util/data-url"
 import { Process } from "@/util/process"
 import { Cause, Effect, Exit, Latch, Layer, Option, Scope, Context, Schema, Types } from "effect"
 import { InstanceState } from "@/effect/instance-state"
+import { NotFoundError } from "@/storage/storage"
 import { TaskTool, type TaskPromptOps } from "@/tool/task"
 import { SessionRunState } from "./run-state"
 import { RuntimeFlags } from "@/effect/runtime-flags"
@@ -1072,11 +1073,46 @@ const layer = Layer.effect(
       return yield* loop({ sessionID: input.sessionID })
     })
 
+    // A benign empty result for a session that was deleted mid-turn. The loop
+    // and its onInterrupt fallback both route through lastAssistant; when the
+    // session row (and its messages) are gone there is no assistant message to
+    // return, so synthesize an empty completed turn instead of throwing a raw
+    // stack to the TUI.
+    const deletedSessionResult = (sessionID: SessionID): SessionV1.WithParts => ({
+      info: {
+        id: MessageID.ascending(),
+        sessionID,
+        role: "assistant",
+        parentID: MessageID.ascending(),
+        time: { created: Date.now(), completed: Date.now() },
+        modelID: ModelV2.ID.make(""),
+        providerID: ProviderV2.ID.make(""),
+        mode: "",
+        agent: "",
+        path: { cwd: "", root: "" },
+        cost: 0,
+        tokens: { input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } },
+        finish: "aborted",
+      },
+      parts: [],
+    })
+
     const lastAssistant = Effect.fnUntraced(function* (sessionID: SessionID) {
       const match = yield* sessions.findMessage(sessionID, (m) => m.info.role !== "user").pipe(Effect.orDie)
       if (Option.isSome(match)) return match.value
       const msgs = yield* sessions.messages({ sessionID, limit: 1 }).pipe(Effect.orDie)
       if (msgs.length > 0) return msgs[0]
+      // Zero messages: distinguish a session deleted mid-turn (benign) from a
+      // genuine invariant violation. If the session row is gone, return an empty
+      // result; otherwise keep the throw — that case really is impossible.
+      const exists = yield* sessions
+        .get(sessionID)
+        .pipe(
+          Effect.as(true),
+          Effect.catchIf(NotFoundError.isInstance, () => Effect.succeed(false)),
+          Effect.orDie,
+        )
+      if (!exists) return deletedSessionResult(sessionID)
       throw new Error("Impossible")
     })
 
@@ -1098,7 +1134,25 @@ const layer = Layer.effect(
 
           let { user: lastUser, assistant: lastAssistant, finished: lastFinished, tasks } = MessageV2.latest(msgs)
 
-          if (!lastUser) throw new Error("No user message found in stream. This should never happen.")
+          if (!lastUser) {
+            // The stream has no user message. This is reachable when the session
+            // is deleted mid-turn (the cascade removes its message rows while the
+            // loop is still running); break cleanly in that case rather than
+            // throwing a raw stack to the TUI. If the session still exists, the
+            // empty stream really is impossible — keep the throw as a signal.
+            const exists = yield* sessions
+              .get(sessionID)
+              .pipe(
+                Effect.as(true),
+                Effect.catchIf(NotFoundError.isInstance, () => Effect.succeed(false)),
+                Effect.orDie,
+              )
+            if (!exists) {
+              yield* Effect.logInfo("session removed mid-turn; ending loop", { "session.id": sessionID })
+              break
+            }
+            throw new Error("No user message found in stream. This should never happen.")
+          }
 
           // --- subagent interrupt: consume a pending steer/cancel at this turn boundary ---
           const pendingInterrupt = yield* interrupt.consume(sessionID)

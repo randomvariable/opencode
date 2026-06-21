@@ -38,8 +38,8 @@ import { SessionID, MessageID, PartID } from "./schema"
 
 import type { Provider } from "@/provider/provider"
 import { Global } from "@opencode-ai/core/global"
-import { Effect, Layer, Option, Context, Schema, Types } from "effect"
-import { NonNegativeInt, optional } from "@opencode-ai/core/schema"
+import { Cause, Effect, Layer, Option, Context, Schema, Types } from "effect"
+import { NonNegativeInt, optionalOmitUndefined } from "@opencode-ai/core/schema"
 import { RuntimeFlags } from "@/effect/runtime-flags"
 import { ProviderV2 } from "@opencode-ai/core/provider"
 import { ModelV2 } from "@opencode-ai/core/model"
@@ -453,6 +453,13 @@ export interface Interface {
   readonly messages: (input: { sessionID: SessionID; limit?: number }) => Effect.Effect<SessionV1.WithParts[], NotFound>
   readonly children: (parentID: SessionID) => Effect.Effect<Info[]>
   readonly remove: (sessionID: SessionID) => Effect.Effect<void, NotFound>
+  /**
+   * Register a hook run inside `remove`, before the session is deleted and its
+   * rows cascade away. Used by SessionRunState to quiesce (cancel + await) an
+   * in-flight turn so a deleted session does not leave a running loop reading a
+   * vanishing stream. Hooks must be idempotent and must not fail.
+   */
+  readonly onBeforeDelete: (hook: (sessionID: SessionID) => Effect.Effect<void>) => Effect.Effect<void>
   readonly updateMessage: <T extends SessionV1.Info>(msg: T) => Effect.Effect<T>
   readonly removeMessage: (input: { sessionID: SessionID; messageID: MessageID }) => Effect.Effect<MessageID>
   readonly removePart: (input: { sessionID: SessionID; messageID: MessageID; partID: PartID }) => Effect.Effect<PartID>
@@ -500,6 +507,15 @@ const layer: Layer.Layer<
     const background = yield* BackgroundJob.Service
     const events = yield* EventV2Bridge.Service
     const flags = yield* RuntimeFlags.Service
+
+    // Hooks run inside `remove` before the session row (and its cascading
+    // children rows) are deleted. SessionRunState registers a canceller here so
+    // an in-flight turn is quiesced before deletion.
+    const beforeDelete = new Set<(sessionID: SessionID) => Effect.Effect<void>>()
+    const onBeforeDelete = (hook: (sessionID: SessionID) => Effect.Effect<void>) =>
+      Effect.sync(() => {
+        beforeDelete.add(hook)
+      })
 
     const createNext = Effect.fn("Session.createNext")(function* (input: {
       id?: SessionID
@@ -619,6 +635,18 @@ const layer: Layer.Layer<
         )
 
         if (hasInstance) yield* cancelBackgroundJobs(background, sessionID)
+        // Quiesce any in-flight turn (cancel + await its fiber) before deleting,
+        // so the running loop does not read a vanishing message stream. Hooks
+        // are idempotent and must not fail; isolate them so a hook error never
+        // blocks deletion. Run before the children walk so the recursion
+        // quiesces each child's runner before its own delete.
+        for (const hook of beforeDelete) {
+          yield* hook(sessionID).pipe(
+            Effect.catchCause((cause) =>
+              Effect.logError("before-delete hook failed", { sessionID, cause: Cause.pretty(cause) }),
+            ),
+          )
+        }
         const kids = yield* children(sessionID)
         for (const child of kids) {
           yield* remove(child.id)
@@ -941,6 +969,7 @@ const layer: Layer.Layer<
       messages,
       children,
       remove,
+      onBeforeDelete,
       updateMessage,
       removeMessage,
       removePart,

@@ -220,6 +220,32 @@ describe("Session", () => {
     }),
   )
 
+  it.live("runs before-delete hooks with the session still present, before deletion", () =>
+    Effect.gen(function* () {
+      const session = yield* SessionNs.Service
+      const dir = yield* tmpdirScoped({ git: true })
+      const info = yield* provideInstance(dir)(session.create({ title: "before-delete-hook" }))
+
+      const seen: string[] = []
+      let existedDuringHook = false
+      yield* session.onBeforeDelete((sessionID) =>
+        Effect.gen(function* () {
+          // The hook must run before the row is deleted, so get() still succeeds.
+          const found = yield* session.get(sessionID).pipe(Effect.exit)
+          existedDuringHook = Exit.isSuccess(found)
+          seen.push(sessionID)
+        }),
+      )
+
+      yield* provideInstance(dir)(remove(info.id))
+
+      expect(seen).toEqual([info.id])
+      expect(existedDuringHook).toBe(true)
+      // And the session is actually gone afterwards.
+      expect(Exit.isFailure(yield* session.get(info.id).pipe(Effect.exit))).toBe(true)
+    }),
+  )
+
   it.instance("persists metadata and copies it on fork by default", () =>
     Effect.gen(function* () {
       const session = yield* SessionNs.Service
