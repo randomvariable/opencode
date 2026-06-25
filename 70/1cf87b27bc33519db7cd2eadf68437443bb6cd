@@ -2,11 +2,13 @@ packages/core/src/database/sqlite.node.ts
   s_26b755bc7dcd5c::t_05bc18e03d2368 159
 packages/core/test/event.test.ts
   s_26b755bc7dcd5c::t_8c98d199b484a5 14,130-141
+  s_2f2053404dc68d::t_53b126ef642a54 124-129,142-145
 packages/core/src/database/sqlite.bun.ts
   s_26b755bc7dcd5c::t_05bc18e03d2368 164
 packages/core/src/event.ts
   s_4390f1f133003a::t_fd2161ef5c3273 23-25
   s_26b755bc7dcd5c::t_7986c678a5157a 3,13,21-22,26-28,285-288
+  s_2f2053404dc68d::t_53b126ef642a54 20
 packages/core/src/database/database.ts
   s_26b755bc7dcd5c::t_05bc18e03d2368 29
 ---
@@ -21,6 +23,14 @@ packages/core/src/database/database.ts
         "tool": "opencode",
         "id": "ses_119136815ffeESPIYLqvWQSm7o",
         "model": "unknown"
+      },
+      "human_author": "Naadir Jeewa <naadir@randomvariable.co.uk>"
+    },
+    "s_2f2053404dc68d": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_104028546ffedq8ooHHzpcY4XB",
+        "model": "zai/glm-5.2"
       },
       "human_author": "Naadir Jeewa <naadir@randomvariable.co.uk>"
     },
