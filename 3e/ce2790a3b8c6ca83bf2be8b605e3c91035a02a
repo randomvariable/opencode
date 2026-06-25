@@ -1,0 +1,39 @@
+packages/opencode/test/provider/transform.test.ts
+  s_2f2053404dc68d::t_36f6153dc4a745 404-485,1585-1696
+packages/core/src/session/runner/llm.ts
+  s_2f2053404dc68d::t_83c49a3ce08189 181,196
+  s_2f2053404dc68d::t_36f6153dc4a745 159-160,163-168,180
+packages/core/src/system-context/index.ts
+  s_2f2053404dc68d::t_36f6153dc4a745 182-187
+packages/opencode/test/session/system.test.ts
+  s_2f2053404dc68d::t_36f6153dc4a745 45-76,174-182
+  s_2f2053404dc68d::t_a18f2ac91d2aff 173,183-186
+packages/core/src/session/runner/to-llm-message.ts
+  s_2f2053404dc68d::t_36f6153dc4a745 13-34,180-183
+packages/core/test/system-context/index.test.ts
+  s_2f2053404dc68d::t_36f6153dc4a745 289-303
+packages/opencode/src/provider/transform.ts
+  s_2f2053404dc68d::t_36f6153dc4a745 64-146,357-359,501,511-512
+packages/opencode/src/session/system.ts
+  s_2f2053404dc68d::t_36f6153dc4a745 26-29,67-77,79
+packages/opencode/src/session/llm/request.ts
+  s_2f2053404dc68d::t_36f6153dc4a745 20-40,134,195
+packages/core/test/session-runner-message.test.ts
+  s_2f2053404dc68d::t_36f6153dc4a745 15,143-160
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.13",
+  "base_commit_sha": "3ece2790a3b8c6ca83bf2be8b605e3c91035a02a",
+  "prompts": {},
+  "sessions": {
+    "s_2f2053404dc68d": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_104028546ffedq8ooHHzpcY4XB",
+        "model": "zai/glm-5.2"
+      },
+      "human_author": "Naadir Jeewa <naadir@randomvariable.co.uk>"
+    }
+  }
+}
