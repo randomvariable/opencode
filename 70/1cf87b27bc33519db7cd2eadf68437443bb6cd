@@ -1,0 +1,36 @@
+packages/core/src/database/sqlite.node.ts
+  s_26b755bc7dcd5c::t_05bc18e03d2368 159
+packages/core/test/event.test.ts
+  s_26b755bc7dcd5c::t_8c98d199b484a5 14,130-141
+packages/core/src/database/sqlite.bun.ts
+  s_26b755bc7dcd5c::t_05bc18e03d2368 164
+packages/core/src/event.ts
+  s_4390f1f133003a::t_fd2161ef5c3273 23-25
+  s_26b755bc7dcd5c::t_7986c678a5157a 3,13,21-22,26-28,285-288
+packages/core/src/database/database.ts
+  s_26b755bc7dcd5c::t_05bc18e03d2368 29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "701cf87b27bc33519db7cd2eadf68437443bb6cd",
+  "prompts": {},
+  "sessions": {
+    "s_26b755bc7dcd5c": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_119136815ffeESPIYLqvWQSm7o",
+        "model": "unknown"
+      },
+      "human_author": "Naadir Jeewa <naadir@randomvariable.co.uk>"
+    },
+    "s_4390f1f133003a": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_119ccf8b0ffezcx6vqCa8m5SWU",
+        "model": "unknown"
+      },
+      "human_author": "Naadir Jeewa <naadir@randomvariable.co.uk>"
+    }
+  }
+}
