@@ -1,0 +1,22 @@
+packages/core/test/session-projector.test.ts
+  s_2f2053404dc68d::t_2508395a4a7810 684
+  s_2f2053404dc68d::t_ef3ef4431a767e 498,560,615
+packages/core/test/session-runner-message.test.ts
+  s_2f2053404dc68d::t_5805707a5e86c0 146
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.13",
+  "base_commit_sha": "f9f561125c179375c5c257676fd8a4d44827e97e",
+  "prompts": {},
+  "sessions": {
+    "s_2f2053404dc68d": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_104028546ffedq8ooHHzpcY4XB",
+        "model": "zai/glm-5.2"
+      },
+      "human_author": "Naadir Jeewa <naadir@randomvariable.co.uk>"
+    }
+  }
+}

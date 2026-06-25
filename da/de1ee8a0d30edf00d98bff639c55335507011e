@@ -1,0 +1,17 @@
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.13",
+  "base_commit_sha": "dade1ee8a0d30edf00d98bff639c55335507011e",
+  "prompts": {},
+  "sessions": {
+    "s_2f2053404dc68d": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_104028546ffedq8ooHHzpcY4XB",
+        "model": "zai/glm-5.2"
+      },
+      "human_author": "Naadir Jeewa <naadir@randomvariable.co.uk>"
+    }
+  }
+}
