@@ -1,0 +1,36 @@
+packages/opencode/src/session/prompt.ts
+  s_2f2053404dc68d::t_bf98c9699d554c 1342,1367-1384
+  s_2f2053404dc68d::t_cf7260dc1b2ff8 1390
+packages/sdk/js/src/v2/gen/sdk.gen.ts
+  s_2f2053404dc68d::t_bf98c9699d554c 3412,3430
+packages/sdk/js/src/v2/gen/types.gen.ts
+  s_2f2053404dc68d::t_bf98c9699d554c 1696,2040,9358
+packages/opencode/src/session/tools.ts
+  s_2f2053404dc68d::t_bf98c9699d554c 21,55,386-387
+packages/core/src/v1/config/config.ts
+  s_2f2053404dc68d::t_bf98c9699d554c 182-185
+packages/opencode/src/tool/registry.ts
+  s_2f2053404dc68d::t_bf98c9699d554c 32-33,37,110-111,199,202-204,243,329,428
+packages/opencode/src/tool/mcp-result.ts
+  s_2f2053404dc68d::t_bf98c9699d554c 1-48
+packages/opencode/src/tool/mcp-search.ts
+  s_2f2053404dc68d::t_bf98c9699d554c 1-255
+packages/opencode/src/tool/mcp-search.txt
+  s_2f2053404dc68d::t_bf98c9699d554c 1-13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.13",
+  "base_commit_sha": "e8f92016679aacb9adde4bc2fcfb675a013fdca7",
+  "prompts": {},
+  "sessions": {
+    "s_2f2053404dc68d": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_104028546ffedq8ooHHzpcY4XB",
+        "model": "zai/glm-5.2"
+      },
+      "human_author": "Naadir Jeewa <naadir@randomvariable.co.uk>"
+    }
+  }
+}
