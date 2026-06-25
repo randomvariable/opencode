@@ -1,0 +1,25 @@
+packages/core/src/session/todo.ts
+  s_2f2053404dc68d::t_cd29f38da6dd4f 9,36,39-50,52,65,69
+packages/core/test/session-projector.test.ts
+  s_2f2053404dc68d::t_cd29f38da6dd4f 613-698
+packages/core/src/session/projector.ts
+  s_2f2053404dc68d::t_cd29f38da6dd4f 193-200,202-213,215-227,229-234,298,397-401,403-406,421-429
+  s_2f2053404dc68d::t_4c019a134b88d8 402
+  s_2f2053404dc68d::t_82c90d14d5b849 214,228
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.13",
+  "base_commit_sha": "bf741ccb50cd92f4343ca45db162de47c4409561",
+  "prompts": {},
+  "sessions": {
+    "s_2f2053404dc68d": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_104028546ffedq8ooHHzpcY4XB",
+        "model": "zai/glm-5.2"
+      },
+      "human_author": "Naadir Jeewa <naadir@randomvariable.co.uk>"
+    }
+  }
+}
