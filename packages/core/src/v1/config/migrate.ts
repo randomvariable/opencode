@@ -66,9 +66,17 @@ export function migrate(info: typeof ConfigV1.Info.Type) {
     plugins: info.plugin?.map((plugin) =>
       typeof plugin === "string" ? plugin : { package: plugin[0], options: plugin[1] },
     ),
-    experimental: info.experimental?.policies && { policies: info.experimental.policies },
+    experimental: experimental(info.experimental),
     providers: providers(info.provider),
   }
+}
+
+function experimental(info?: typeof ConfigV1.Info.Type.experimental) {
+  if (!info) return undefined
+  const result: Record<string, unknown> = {}
+  if (info.policies) result.policies = info.policies
+  if (info.mcp_lazy !== undefined) result.mcp_lazy = info.mcp_lazy
+  return Object.keys(result).length ? result : undefined
 }
 
 function permissions(info?: ConfigPermissionV1.Info, tools?: Readonly<Record<string, boolean>>) {
