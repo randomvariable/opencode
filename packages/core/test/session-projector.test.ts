@@ -599,6 +599,53 @@ describe("SessionProjector orphan-part tolerance", () => {
       expect(row).toBeUndefined()
     }),
   )
+
+  it.effect("does not throw and does not insert part when parent session is gone", () =>
+    Effect.gen(function* () {
+      const { db } = yield* Database.Service
+      const sessionID = SessionV2.ID.make("ses_orphan_part_session")
+      const messageID = SessionV1.MessageID.make("msg_orphan_part_session")
+      const partID = SessionV1.PartID.make("prt_orphan_part_session")
+      yield* db
+        .insert(ProjectTable)
+        .values({ id: Project.ID.global, worktree: AbsolutePath.make("/project"), sandboxes: [] })
+        .onConflictDoNothing()
+        .run()
+        .pipe(Effect.orDie)
+      yield* db
+        .insert(SessionTable)
+        .values({
+          id: sessionID,
+          project_id: Project.ID.global,
+          slug: "orphan-part-session-test",
+          directory: "/project",
+          title: "orphan part session test",
+          version: "test",
+        })
+        .run()
+        .pipe(Effect.orDie)
+      yield* db.delete(SessionTable).where(eq(SessionTable.id, sessionID)).run().pipe(Effect.orDie)
+
+      const evts = yield* EventV2.Service
+      const exit = yield* evts
+        .publish(SessionV1.Event.PartUpdated, {
+          sessionID,
+          time: 0,
+          part: {
+            id: partID,
+            sessionID,
+            messageID,
+            type: "text",
+            text: "late orphan session part",
+          } as SessionV1.TextPart,
+        })
+        .pipe(Effect.exit)
+
+      expect(exit._tag).toBe("Success")
+      const row = yield* db.select().from(PartTable).where(eq(PartTable.id, partID)).get().pipe(Effect.orDie)
+      expect(row).toBeUndefined()
+    }),
+  )
 })
 
 describe("SessionProjector orphan-message tolerance", () => {

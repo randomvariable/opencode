@@ -349,11 +349,15 @@ const layer = Layer.effectDiscard(
         const messageID = event.data.part.messageID
         const sessionID = event.data.part.sessionID
         const data = partData(event.data.part)
+        if (!(yield* sessionPresent(db, sessionID))) {
+          yield* Effect.logWarning("skipping orphan part; parent session absent", { id, messageID, sessionID })
+          return
+        }
         const row = yield* db.select().from(PartTable).where(eq(PartTable.id, id)).get().pipe(Effect.orDie)
         const parent = yield* db
           .select({ id: MessageTable.id })
           .from(MessageTable)
-          .where(eq(MessageTable.id, messageID))
+          .where(and(eq(MessageTable.id, messageID), eq(MessageTable.session_id, sessionID)))
           .get()
           .pipe(Effect.orDie)
         if (!parent) {
