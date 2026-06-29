@@ -1,0 +1,21 @@
+packages/core/test/session-projector.test.ts
+  s_0042e52af17d46::t_dd99259c5526ba 612-658
+packages/core/src/session/projector.ts
+  s_0042e52af17d46::t_d0593ddc6a5382 352-355,360
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "c0cc85f9acc8f4f5a38f9a3095e0427580513851",
+  "prompts": {},
+  "sessions": {
+    "s_0042e52af17d46": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_0ea5027efffe9rqFH6E08Z5Tkf",
+        "model": "chatgpt/gpt-5.5"
+      },
+      "human_author": "Naadir Jeewa <naadir@randomvariable.co.uk>"
+    }
+  }
+}
