@@ -69,13 +69,6 @@ const layer: Layer.Layer<Service, never, Project.Service | InstanceBootstrap.Ser
         return true
       })
 
-    const completeLoad = (directory: string, input: LoadInput, entry: Entry) =>
-      Effect.gen(function* () {
-        const exit = yield* Effect.exit(boot({ ...input, directory }))
-        if (Exit.isFailure(exit)) yield* removeEntry(directory, entry)
-        yield* Deferred.done(entry.deferred, exit).pipe(Effect.asVoid)
-      })
-
     const emitDisposed = (input: { directory: string; project?: string }) =>
       Effect.sync(() =>
         GlobalBus.emit("event", {
@@ -90,6 +83,28 @@ const layer: Layer.Layer<Service, never, Project.Service | InstanceBootstrap.Ser
           },
         }),
       )
+
+    // A failed boot is NOT a no-op: bootstrap.run spawns MCP servers, watchers,
+    // and registers disposers before any failure point. Tearing down only the
+    // cache entry leaks those child processes/watches, and the next load() for
+    // the same directory re-boots and spawns a fresh set. Always run disposers
+    // (idempotent, directory-keyed) on failure so partial side effects are freed.
+    const disposePartialBoot = (directory: string, project?: string) =>
+      Effect.gen(function* () {
+        yield* Effect.logWarning("disposing partially-booted instance", { directory })
+        yield* Effect.promise(() => runDisposers(directory))
+        yield* emitDisposed({ directory, project })
+      })
+
+    const completeLoad = (directory: string, input: LoadInput, entry: Entry) =>
+      Effect.gen(function* () {
+        const exit = yield* Effect.exit(boot({ ...input, directory }))
+        if (Exit.isFailure(exit)) {
+          yield* removeEntry(directory, entry)
+          yield* disposePartialBoot(directory, input.project?.id)
+        }
+        yield* Deferred.done(entry.deferred, exit).pipe(Effect.asVoid)
+      })
 
     const disposeContext = Effect.fn("InstanceStore.disposeContext")(function* (ctx: InstanceContext) {
       yield* Effect.logInfo("disposing instance", { directory: ctx.directory })

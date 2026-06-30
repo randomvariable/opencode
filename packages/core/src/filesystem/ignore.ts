@@ -45,7 +45,14 @@ const FILES = [
   "**/.nyc_output/**",
 ]
 
-export const PATTERNS = [...FILES, ...FOLDERS]
+// FOLDERS is a Set of bare directory names, consumed segment-wise by match().
+// The parcel file watcher's `ignore` option instead matches globs against full
+// paths, so a bare name like "node_modules" never matches "/abs/path/node_modules/..."
+// and the heavy directory gets fully (recursively) watched — exhausting inotify
+// watches. Expand each folder name into recursive globs for the watcher path list.
+const FOLDER_GLOBS = [...FOLDERS].flatMap((name) => [`**/${name}`, `**/${name}/**`])
+
+export const PATTERNS = [...FILES, ...FOLDER_GLOBS]
 
 export function match(filepath: string, opts?: { extra?: string[]; whitelist?: string[] }) {
   for (const pattern of opts?.whitelist || []) {
