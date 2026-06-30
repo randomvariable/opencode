@@ -499,6 +499,7 @@ export const node = LayerNode.make({
     Database.node,
     Ripgrep.node,
   ],
+  ] as const,
 })
 
 export * as ToolRegistry from "./registry"

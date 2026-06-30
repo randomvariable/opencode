@@ -1802,7 +1802,7 @@ export const node = LayerNode.make({
     RuntimeFlags.node,
     Database.node,
     Interrupt.node,
-  ],
+  ] as const,
 })
 
 export * as SessionPrompt from "./prompt"

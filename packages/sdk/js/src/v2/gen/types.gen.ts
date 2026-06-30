@@ -1120,10 +1120,6 @@ export type GlobalEvent = {
           timestamp: number
           sessionID: string
           revert: RevertState
-        type: "session.created"
-        properties: {
-          sessionID: string
-          info: Session
         }
       }
     | {
@@ -1132,6 +1128,27 @@ export type GlobalEvent = {
         properties: {
           timestamp: number
           sessionID: string
+        }
+      }
+    | {
+        id: string
+        type: "session.next.revert.committed"
+        properties: {
+          timestamp: number
+          sessionID: string
+          messageID: string
+        }
+      }
+    | {
+        id: string
+        type: "session.created"
+        properties: {
+          sessionID: string
+          info: Session
+        }
+      }
+    | {
+        id: string
         type: "session.updated"
         properties: {
           sessionID: string
@@ -1140,9 +1157,6 @@ export type GlobalEvent = {
       }
     | {
         id: string
-        type: "session.next.revert.committed"
-        properties: {
-          timestamp: number
         type: "session.deleted"
         properties: {
           sessionID: string
@@ -3731,11 +3745,6 @@ export type SyncEventSessionNextRevertStaged = {
   id: string
   syncEvent: {
     type: "session.next.revert.staged.1"
-export type SyncEventSessionCreated = {
-  type: "sync"
-  id: string
-  syncEvent: {
-    type: "session.created.1"
     id: string
     seq: number
     aggregateID: string
@@ -3743,8 +3752,6 @@ export type SyncEventSessionCreated = {
       timestamp: number
       sessionID: string
       revert: RevertState
-      sessionID: string
-      info: Session
     }
   }
 }
@@ -3754,19 +3761,12 @@ export type SyncEventSessionNextRevertCleared = {
   id: string
   syncEvent: {
     type: "session.next.revert.cleared.1"
-export type SyncEventSessionUpdated = {
-  type: "sync"
-  id: string
-  syncEvent: {
-    type: "session.updated.1"
     id: string
     seq: number
     aggregateID: string
     data: {
       timestamp: number
       sessionID: string
-      sessionID: string
-      info: Session
     }
   }
 }
@@ -3776,6 +3776,47 @@ export type SyncEventSessionNextRevertCommitted = {
   id: string
   syncEvent: {
     type: "session.next.revert.committed.1"
+    id: string
+    seq: number
+    aggregateID: string
+    data: {
+      timestamp: number
+      sessionID: string
+      messageID: string
+    }
+  }
+}
+
+export type SyncEventSessionCreated = {
+  type: "sync"
+  id: string
+  syncEvent: {
+    type: "session.created.1"
+    id: string
+    seq: number
+    aggregateID: string
+    data: {
+      sessionID: string
+      info: Session
+    }
+  }
+}
+
+export type SyncEventSessionUpdated = {
+  type: "sync"
+  id: string
+  syncEvent: {
+    type: "session.updated.1"
+    id: string
+    seq: number
+    aggregateID: string
+    data: {
+      sessionID: string
+      info: Session
+    }
+  }
+}
+
 export type SyncEventSessionDeleted = {
   type: "sync"
   id: string
@@ -6613,6 +6654,11 @@ export type EventSessionNextRevertCommitted = {
   type: "session.next.revert.committed"
   properties: {
     timestamp: number
+    sessionID: string
+    messageID: string
+  }
+}
+
 export type EventSessionCreated = {
   id: string
   type: "session.created"

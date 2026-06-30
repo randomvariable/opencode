@@ -15,6 +15,7 @@ import type { SessionPrompt } from "../../src/session/prompt"
 import { MessageID, PartID, SessionID } from "../../src/session/schema"
 import { SessionRunState } from "@/session/run-state"
 import { SessionStatus } from "@/session/status"
+import { Interrupt } from "@/session/interrupt"
 
 import { TaskTool, renderOutput, type TaskPromptOps } from "../../src/tool/task"
 import { Truncate } from "@/tool/truncate"
@@ -46,6 +47,7 @@ const layer = (flags: Partial<RuntimeFlags.Info> = {}) =>
       SessionProjector.node,
       SessionRunState.node,
       SessionStatus.node,
+      Interrupt.node,
       Truncate.node,
       ToolRegistry.node,
       Database.node,
