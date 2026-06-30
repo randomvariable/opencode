@@ -139,12 +139,14 @@ describe("Project.fromDirectory", () => {
     }),
   )
 
-  it.live("returns global for non-git directory", () =>
+  it.live("returns global for non-git directory without promoting it to filesystem root", () =>
     Effect.gen(function* () {
       const project = yield* Project.Service
       const tmp = yield* tmpdirScoped()
       const result = yield* project.fromDirectory(tmp)
       expect(result.project.id).toBe(ProjectV2.ID.global)
+      expect(result.project.worktree).toBe(tmp)
+      expect(result.sandbox).toBe(tmp)
     }),
   )
 
