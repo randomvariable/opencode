@@ -38,6 +38,8 @@ import { ToolRegistry } from "./tool/registry"
 import { ToolOutputStore } from "./tool-output-store"
 
 export { LocationServiceMap } from "./location-service-map"
+import { BrowseServiceMap } from "./browse-service-map"
+export { BrowseServiceMap } from "./browse-service-map"
 
 export const locationServices = LayerNode.group([
   Location.node,
@@ -80,6 +82,42 @@ export const locationServices = LayerNode.group([
 
 export type LocationServices = LayerNode.Output<typeof locationServices>
 export type LocationError = LayerNode.Error<typeof locationServices>
+
+// Minimal service group for read-only directory browsing (project picker).
+// Intentionally excludes Watcher / ToolRegistry / Plugin / MCP / session nodes:
+// listing a directory must not spawn watchers, tools, or MCP servers.
+export const browseServices = LayerNode.group([Location.node, FileSystemSearch.node, FileSystem.node])
+
+export type BrowseServices = LayerNode.Output<typeof browseServices>
+export type BrowseError = LayerNode.Error<typeof browseServices>
+
+export function buildBrowseServiceMap(
+  replacements: LayerNode.Replacements = [],
+): Layer.Layer<BrowseServiceMap.Service> {
+  return Layer.effect(
+    BrowseServiceMap.Service,
+    LayerMap.make(
+      (ref: Location.Ref) => {
+        const allReplacements = replacements.concat([[Location.node, Location.boundNode(ref)]])
+        const location = LayerNode.hoist(browseServices, Node.tags.values.global, allReplacements)
+
+        return LayerNode.compile(location.node).pipe(
+          Layer.fresh,
+          Layer.tap(() =>
+            Effect.logInfo("booting browse services", {
+              directory: ref.directory,
+              workspaceID: ref.workspaceID,
+            }),
+          ),
+          Layer.provide(LayerNode.compile(location.hoisted)),
+        )
+      },
+      { idleTimeToLive: "5 minutes" },
+    ),
+  )
+}
+
+export const browseServiceMapLayer = buildBrowseServiceMap()
 
 export function buildLocationServiceMap(
   replacements: LayerNode.Replacements = [],

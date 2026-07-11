@@ -32,13 +32,11 @@ import { LspTool } from "./lsp"
 import * as Truncate from "./truncate"
 import { ApplyPatchTool } from "./apply_patch"
 import { McpSearchTool } from "./mcp-search"
-import { MCP } from "../mcp"
 import { Glob } from "@opencode-ai/core/util/glob"
 import path from "path"
 import { pathToFileURL } from "url"
 import { Effect, Layer, Context, Option } from "effect"
-import { FetchHttpClient, HttpClient } from "effect/unstable/http"
-import { ChildProcessSpawner } from "effect/unstable/process/ChildProcessSpawner"
+import { FetchHttpClient } from "effect/unstable/http"
 import { CrossSpawnSpawner } from "@opencode-ai/core/cross-spawn-spawner"
 import { Format } from "../format"
 import { InstanceState } from "@/effect/instance-state"
@@ -498,7 +496,6 @@ export const node = LayerNode.make({
     MCP.node,
     Database.node,
     Ripgrep.node,
-  ],
   ] as const,
 })
 

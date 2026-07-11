@@ -1,5 +1,5 @@
 import { describe, expect } from "bun:test"
-import { DateTime, Effect, Layer, Schema } from "effect"
+import { DateTime, Effect, Schema } from "effect"
 import { asc, eq } from "drizzle-orm"
 import { Database } from "@opencode-ai/core/database/database"
 import { LayerNode } from "@opencode-ai/core/effect/layer-node"
@@ -540,7 +540,7 @@ describe("SessionProjector", () => {
 })
 
 describe("SessionProjector orphan-part tolerance", () => {
-  const it = testEffect(Layer.mergeAll(Database.defaultLayer, EventV2.defaultLayer, SessionProjector.defaultLayer))
+  const it = testEffect(AppNodeBuilder.build(LayerNode.group([Database.node, EventV2.node, SessionProjector.node])))
   const sessionID = SessionV2.ID.make("ses_orphan_test")
   const messageID = SessionV1.MessageID.make("msg_orphan")
   const partID = SessionV1.PartID.make("prt_orphan")
@@ -649,7 +649,7 @@ describe("SessionProjector orphan-part tolerance", () => {
 })
 
 describe("SessionProjector orphan-message tolerance", () => {
-  const it = testEffect(Layer.mergeAll(Database.defaultLayer, EventV2.defaultLayer, SessionProjector.defaultLayer))
+  const it = testEffect(AppNodeBuilder.build(LayerNode.group([Database.node, EventV2.node, SessionProjector.node])))
   const sessionID = SessionV2.ID.make("ses_orphan_msg_test")
   const messageID = SessionV1.MessageID.make("msg_orphan_session")
 
@@ -704,7 +704,7 @@ describe("SessionProjector orphan-message tolerance", () => {
 })
 
 describe("SessionProjector orphan session-scoped writes", () => {
-  const it = testEffect(Layer.mergeAll(Database.defaultLayer, EventV2.defaultLayer, SessionProjector.defaultLayer))
+  const it = testEffect(AppNodeBuilder.build(LayerNode.group([Database.node, EventV2.node, SessionProjector.node])))
   const model = { id: ModelV2.ID.make("model"), providerID: ProviderV2.ID.make("provider") }
   const created = DateTime.makeUnsafe(0)
 
