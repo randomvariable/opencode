@@ -1,4 +1,5 @@
 import { LayerNode } from "@opencode-ai/core/effect/layer-node"
+import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
 import { Config } from "@/config/config"
 import { SessionV1 } from "@opencode-ai/core/v1/session"
 import type { MessageV2 } from "@/session/message-v2"
@@ -168,5 +169,7 @@ const layer = Layer.effect(
 )
 
 export const node = LayerNode.make({ service: Service, layer: layer, deps: [Config.node] })
+
+export const defaultLayer = AppNodeBuilder.build(node)
 
 export * as Image from "./image"

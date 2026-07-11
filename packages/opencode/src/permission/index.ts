@@ -1,4 +1,5 @@
 import { LayerNode } from "@opencode-ai/core/effect/layer-node"
+import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
 import { ConfigPermissionV1 } from "@opencode-ai/core/v1/config/permission"
 import { InstanceState } from "@/effect/instance-state"
 import { Wildcard } from "@opencode-ai/core/util/wildcard"
@@ -219,5 +220,7 @@ export function visibleTools<T>(tools: Record<string, T>, ruleset: PermissionV1.
 }
 
 export const node = LayerNode.make({ service: Service, layer: layer, deps: [EventV2Bridge.node] })
+
+export const defaultLayer = AppNodeBuilder.build(node)
 
 export * as Permission from "."

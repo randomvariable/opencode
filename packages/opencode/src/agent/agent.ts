@@ -1,4 +1,5 @@
 import { LayerNode } from "@opencode-ai/core/effect/layer-node"
+import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
 import { PermissionV1 } from "@opencode-ai/core/v1/permission"
 import { Config } from "@/config/config"
 import { serviceUse } from "@opencode-ai/core/effect/service-use"
@@ -450,5 +451,7 @@ export const node = LayerNode.make({
   layer: layer,
   deps: [Config.node, Auth.node, Plugin.node, Skill.node, Provider.node, locationServiceMapNode],
 })
+
+export const defaultLayer = AppNodeBuilder.build(node)
 
 export * as Agent from "./agent"

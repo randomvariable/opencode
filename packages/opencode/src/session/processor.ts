@@ -1,4 +1,5 @@
 import { LayerNode } from "@opencode-ai/core/effect/layer-node"
+import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
 import { PermissionV1 } from "@opencode-ai/core/v1/permission"
 import { Image } from "@/image/image"
 import { SessionV1 } from "@opencode-ai/core/v1/session"
@@ -713,5 +714,7 @@ export const node = LayerNode.make({
     Database.node,
   ],
 })
+
+export const defaultLayer = AppNodeBuilder.build(node)
 
 export * as SessionProcessor from "./processor"

@@ -12,6 +12,7 @@ import { testEffect } from "../lib/effect"
 import { CrossSpawnSpawner } from "@opencode-ai/core/cross-spawn-spawner"
 import { Ripgrep } from "@opencode-ai/core/ripgrep"
 import { Database } from "@opencode-ai/core/database/database"
+import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
 import { EventV2Bridge } from "@/event-v2-bridge"
 import { Config } from "@/config/config"
 import { Agent } from "@/agent/agent"
@@ -26,16 +27,16 @@ const layer = Layer.mergeAll(
   BackgroundJob.defaultLayer,
   EventV2Bridge.defaultLayer,
   Config.defaultLayer,
-  CrossSpawnSpawner.defaultLayer,
+  AppNodeBuilder.build(CrossSpawnSpawner.node),
   Session.defaultLayer,
   SessionRunState.defaultLayer,
   SessionStatus.defaultLayer,
   Truncate.defaultLayer,
   Interrupt.defaultLayer,
   Permission.defaultLayer,
-  Database.defaultLayer,
+  AppNodeBuilder.build(Database.node),
   RuntimeFlags.layer({}),
-).pipe(Layer.provide(Ripgrep.defaultLayer))
+).pipe(Layer.provide(AppNodeBuilder.build(Ripgrep.node)))
 
 const it = testEffect(layer)
 

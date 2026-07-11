@@ -1,4 +1,5 @@
 import { LayerNode } from "@opencode-ai/core/effect/layer-node"
+import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
 import { NodePath } from "@effect/platform-node"
 import { Cause, Duration, Effect, Layer, Option, Schedule, Context } from "effect"
 import path from "path"
@@ -152,5 +153,7 @@ const layer = Layer.effect(
 )
 
 export const node = LayerNode.make({ service: Service, layer: layer, deps: [FSUtil.node] })
+
+export const defaultLayer = AppNodeBuilder.build(node)
 
 export * as Truncate from "./truncate"

@@ -1,4 +1,5 @@
 import { LayerNode } from "@opencode-ai/core/effect/layer-node"
+import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
 import { SessionV1 } from "@opencode-ai/core/v1/session"
 import { ConfigV1 } from "@opencode-ai/core/v1/config/config"
 import { Session } from "./session"
@@ -558,5 +559,7 @@ export const node = LayerNode.make({
     RuntimeFlags.node,
   ],
 })
+
+export const defaultLayer = AppNodeBuilder.build(node)
 
 export * as SessionCompaction from "./compaction"

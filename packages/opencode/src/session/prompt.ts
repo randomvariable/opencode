@@ -1,4 +1,5 @@
 import { LayerNode } from "@opencode-ai/core/effect/layer-node"
+import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
 import { PermissionV1 } from "@opencode-ai/core/v1/permission"
 import path from "path"
 import { SessionV1 } from "@opencode-ai/core/v1/session"
@@ -1647,7 +1648,7 @@ export const defaultLayer = Layer.suspend(() =>
     Layer.provide(Provider.defaultLayer),
     Layer.provide(Config.defaultLayer),
     Layer.provide(Instruction.defaultLayer),
-    Layer.provide(FSUtil.defaultLayer),
+    Layer.provide(AppNodeBuilder.build(FSUtil.node)),
     Layer.provide(Plugin.defaultLayer),
     Layer.provide(Session.defaultLayer),
     Layer.provide(SessionRevert.defaultLayer),
@@ -1656,10 +1657,10 @@ export const defaultLayer = Layer.suspend(() =>
     Layer.provide(
       Layer.mergeAll(
         Agent.defaultLayer,
-        Database.defaultLayer,
+        AppNodeBuilder.build(Database.node),
         SystemPrompt.defaultLayer,
         LLM.defaultLayer,
-        CrossSpawnSpawner.defaultLayer,
+        AppNodeBuilder.build(CrossSpawnSpawner.node),
         RuntimeFlags.defaultLayer,
         EventV2Bridge.defaultLayer,
         Interrupt.defaultLayer,

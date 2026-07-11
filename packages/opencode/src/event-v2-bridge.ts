@@ -1,6 +1,7 @@
 // Opencode publish boundary for core events. Attach routed instance location
 // so direct EventV2 consumers can isolate directory/workspace streams.
 import { LayerNode } from "@opencode-ai/core/effect/layer-node"
+import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
 import { InstanceRef, WorkspaceRef } from "@/effect/instance-ref"
 import { GlobalBus } from "@/bus/global"
 import { EventV2 } from "@opencode-ai/core/event"
@@ -67,5 +68,7 @@ const layer = Layer.effect(
 )
 
 export const node = LayerNode.make({ service: Service, layer: layer, deps: [EventV2.node] })
+
+export const defaultLayer = AppNodeBuilder.build(node)
 
 export * as EventV2Bridge from "./event-v2-bridge"

@@ -1,6 +1,7 @@
 import path from "node:path"
 import { pathToFileURL } from "node:url"
 import { LayerNode } from "@opencode-ai/core/effect/layer-node"
+import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
 import { ConfigV1 } from "@opencode-ai/core/v1/config/config"
 import { serviceUse } from "@opencode-ai/core/effect/service-use"
 import { Client, type ClientOptions } from "@modelcontextprotocol/sdk/client/index.js"
@@ -1000,5 +1001,7 @@ export const node = LayerNode.make({
   layer: layer,
   deps: [CrossSpawnSpawner.node, McpAuth.node, EventV2Bridge.node, Config.node, McpBrowser.node],
 })
+
+export const defaultLayer = AppNodeBuilder.build(node)
 
 export * as MCP from "."

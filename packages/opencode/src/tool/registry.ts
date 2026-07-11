@@ -1,4 +1,5 @@
 import { LayerNode } from "@opencode-ai/core/effect/layer-node"
+import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
 import { httpClient } from "@opencode-ai/core/effect/app-node-platform"
 import { Ripgrep } from "@opencode-ai/core/ripgrep"
 import { PlanExitTool } from "./plan"
@@ -31,7 +32,6 @@ import { WebSearchTool } from "./websearch"
 import { LspTool } from "./lsp"
 import * as Truncate from "./truncate"
 import { ApplyPatchTool } from "./apply_patch"
-import { McpSearchTool } from "./mcp-search"
 import { Glob } from "@opencode-ai/core/util/glob"
 import path from "path"
 import { pathToFileURL } from "url"
@@ -119,7 +119,6 @@ const layer = Layer.effect(
     const patchtool = yield* ApplyPatchTool
     const skilltool = yield* SkillTool
     const mcpServiceOpt = yield* Effect.serviceOption(MCP.Service)
-    const mcpsearch = Option.isSome(mcpServiceOpt) ? yield* McpSearchTool : undefined
     const agent = yield* Agent.Service
     const codeMode = flags.experimentalCodeMode ? yield* Effect.promise(() => import("./code-mode")) : undefined
     const codeModeTool = codeMode ? yield* codeMode.CodeModeTool : undefined
@@ -212,8 +211,7 @@ const layer = Layer.effect(
         const cfg = yield* config.get()
         const questionEnabled = ["app", "cli", "desktop"].includes(flags.client) || flags.enableQuestionTool
 
-        const mcpLazyEnabled = cfg.experimental?.mcp_lazy === true
-        const mcpsearchDef: Tool.Def[] = mcpLazyEnabled && mcpsearch ? [yield* Tool.init(mcpsearch)] : []
+        const mcpsearchDef: Tool.Def[] = []
 
         const tool = yield* Effect.all({
           invalid: Tool.init(invalid),
@@ -380,15 +378,15 @@ export const defaultLayer = Layer.suspend(() =>
       Layer.provide(Provider.defaultLayer),
       Layer.provide(LSP.defaultLayer),
       Layer.provide(Instruction.defaultLayer),
-      Layer.provide(FSUtil.defaultLayer),
+      Layer.provide(AppNodeBuilder.build(FSUtil.node)),
       Layer.provide(EventV2Bridge.defaultLayer),
       Layer.provideMerge(Interrupt.defaultLayer),
       Layer.provide(FetchHttpClient.layer),
       Layer.provide(Format.defaultLayer),
-      Layer.provide(CrossSpawnSpawner.defaultLayer),
+      Layer.provide(AppNodeBuilder.build(CrossSpawnSpawner.node)),
       Layer.provide(Truncate.defaultLayer),
     )
-    .pipe(Layer.provide(Database.defaultLayer), Layer.provide(RuntimeFlags.defaultLayer)),
+    .pipe(Layer.provide(AppNodeBuilder.build(Database.node)), Layer.provide(RuntimeFlags.defaultLayer)),
 )
 
 function isZodType(value: unknown): value is z.ZodType {

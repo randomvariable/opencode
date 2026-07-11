@@ -1,4 +1,5 @@
 import { LayerNode } from "@opencode-ai/core/effect/layer-node"
+import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
 import path from "path"
 import { Effect, Layer, Context, Schema } from "effect"
 import { NamedError } from "@opencode-ai/core/util/error"
@@ -349,5 +350,7 @@ export const node = LayerNode.make({
   layer: layer,
   deps: [Discovery.node, Config.node, EventV2Bridge.node, FSUtil.node, Global.node, RuntimeFlags.node],
 })
+
+export const defaultLayer = AppNodeBuilder.build(node)
 
 export * as Skill from "."

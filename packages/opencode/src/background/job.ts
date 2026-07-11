@@ -1,4 +1,5 @@
 import { LayerNode } from "@opencode-ai/core/effect/layer-node"
+import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
 import { BackgroundJob as CoreBackgroundJob } from "@opencode-ai/core/background-job"
 import { InstanceState } from "@/effect/instance-state"
 import { Effect, Layer } from "effect"
@@ -36,5 +37,7 @@ const layer = Layer.effect(
 )
 
 export const node = LayerNode.make({ service: CoreBackgroundJob.Service, layer, deps: [] })
+
+export const defaultLayer = AppNodeBuilder.build(node)
 
 export * as BackgroundJob from "./job"

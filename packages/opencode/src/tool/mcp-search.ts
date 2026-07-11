@@ -1,4 +1,5 @@
 import { Effect, Schema } from "effect"
+import { CallToolResultSchema } from "@modelcontextprotocol/sdk/types.js"
 import { Tool } from "./tool"
 import { MCP } from "../mcp"
 import { Plugin } from "../plugin"
@@ -58,7 +59,7 @@ function getServers(mcp: MCP.Interface) {
         const prefix = sanitize(name) + "_"
         const tools = toolEntries
           .filter(([key]) => key.startsWith(prefix))
-          .map(([key, tool]) => ({ name: key.slice(prefix.length), description: tool.description }))
+          .map(([key, tool]) => ({ name: key.slice(prefix.length), description: tool.def.description }))
         return { name, tools }
       })
   })
@@ -132,14 +133,14 @@ function resolveTool(mcp: MCP.Interface, server: string, toolName: string) {
 function doDescribe(mcp: MCP.Interface, server: string, toolName: string) {
   return Effect.gen(function* () {
     const { mcpTool } = yield* resolveTool(mcp, server, toolName)
-    const schema = extractSchema(mcpTool.inputSchema)
+    const schema = extractSchema(mcpTool.def.inputSchema)
 
     return {
       title: `${server}/${toolName}`,
       output: [
         `## ${server}/${toolName}`,
         "",
-        `**Description:** ${mcpTool.description ?? "No description"}`,
+        `**Description:** ${mcpTool.def.description ?? "No description"}`,
         "",
         "**Parameters:**",
         schema ? formatSchema(schema) : "No parameters required",
@@ -164,7 +165,7 @@ function doCall(
 ) {
   return Effect.gen(function* () {
     const { key, mcpTool } = yield* resolveTool(mcp, server, toolName)
-    const schema = extractSchema(mcpTool.inputSchema)
+    const schema = extractSchema(mcpTool.def.inputSchema)
     const required = (schema?.required as string[]) ?? []
     const missing = required.filter((r) => !(r in args))
 
@@ -177,7 +178,7 @@ function doCall(
           `**Missing:** ${missing.join(", ")}`,
           "",
           `**Tool:** ${server}/${toolName}`,
-          `**Description:** ${mcpTool.description ?? "No description"}`,
+          `**Description:** ${mcpTool.def.description ?? "No description"}`,
           "",
           "**Parameters:**",
           schema ? formatSchema(schema) : "No schema available",
@@ -192,11 +193,12 @@ function doCall(
     yield* ctx.ask({ permission: key, metadata: {}, patterns: ["*"], always: ["*"] })
     yield* plugin.trigger("tool.execute.before", { tool: key, sessionID: ctx.sessionID, callID: ctx.callID }, { args })
 
-    const execute = mcpTool.execute
-    if (!execute) throw new Error(`Tool "${toolName}" on "${server}" has no execute function`)
-
     const result = yield* Effect.promise(() =>
-      execute(args, { toolCallId: ctx.callID ?? "", abortSignal: ctx.abort, messages: [] }),
+      mcpTool.client.callTool(
+        { name: mcpTool.def.name, arguments: args },
+        CallToolResultSchema,
+        { signal: ctx.abort, timeout: mcpTool.timeout },
+      ),
     )
 
     yield* plugin.trigger(

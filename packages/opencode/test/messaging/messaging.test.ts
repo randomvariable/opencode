@@ -6,6 +6,7 @@ import { disposeAllInstances } from "../fixture/fixture"
 import { SessionID } from "../../src/session/schema"
 import { testEffect } from "../lib/effect"
 import { CrossSpawnSpawner } from "@opencode-ai/core/cross-spawn-spawner"
+import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
 import { EventV2Bridge } from "../../src/event-v2-bridge"
 import { escapeBody } from "../../src/tool/message"
 
@@ -13,7 +14,7 @@ const it = testEffect(
   Layer.mergeAll(
     Messaging.layer.pipe(Layer.provideMerge(EventV2Bridge.defaultLayer)),
     BackgroundJob.defaultLayer,
-    CrossSpawnSpawner.defaultLayer,
+    AppNodeBuilder.build(CrossSpawnSpawner.node),
   ),
 )
 

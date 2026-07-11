@@ -1,4 +1,5 @@
 import { LayerNode } from "@opencode-ai/core/effect/layer-node"
+import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
 import { Effect, Layer, Context, Schema } from "effect"
 import { serviceUse } from "@opencode-ai/core/effect/service-use"
 import { ChildProcess } from "effect/unstable/process"
@@ -199,5 +200,7 @@ export const node = LayerNode.make({
   layer: layer,
   deps: [Config.node, AppProcess.node, RuntimeFlags.node],
 })
+
+export const defaultLayer = AppNodeBuilder.build(node)
 
 export * as Format from "."

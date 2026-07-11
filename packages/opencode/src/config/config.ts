@@ -1,4 +1,5 @@
 import { LayerNode } from "@opencode-ai/core/effect/layer-node"
+import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
 import { httpClient } from "@opencode-ai/core/effect/app-node-platform"
 import { serviceUse } from "@opencode-ai/core/effect/service-use"
 import path from "path"
@@ -677,5 +678,7 @@ export const node = LayerNode.make({
   layer: layer,
   deps: [FSUtil.node, Auth.node, Account.node, Env.node, Npm.node, httpClient],
 })
+
+export const defaultLayer = AppNodeBuilder.build(node)
 
 export * as Config from "./config"

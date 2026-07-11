@@ -1,4 +1,5 @@
 import { LayerNode } from "@opencode-ai/core/effect/layer-node"
+import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
 import { llmClient } from "@opencode-ai/core/effect/app-node-platform"
 import { PermissionV1 } from "@opencode-ai/core/v1/permission"
 import { Provider } from "@/provider/provider"
@@ -400,5 +401,7 @@ export const node = LayerNode.make({
     RuntimeFlags.node,
   ],
 })
+
+export const defaultLayer = AppNodeBuilder.build(node)
 
 export * as LLM from "./llm"

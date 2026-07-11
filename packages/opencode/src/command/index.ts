@@ -1,4 +1,5 @@
 import { LayerNode } from "@opencode-ai/core/effect/layer-node"
+import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
 import path from "path"
 import { InstanceState } from "@/effect/instance-state"
 import { EffectBridge } from "@/effect/bridge"
@@ -173,5 +174,7 @@ const layer = Layer.effect(
 )
 
 export const node = LayerNode.make({ service: Service, layer: layer, deps: [Config.node, MCP.node, Skill.node] })
+
+export const defaultLayer = AppNodeBuilder.build(node)
 
 export * as Command from "."

@@ -389,8 +389,8 @@ export const resolve = Effect.fn("SessionTools.resolve")(function* (input: {
 
   if (flags.experimentalCodeMode) return tools
 
-  const mcpLazy = (yield* config.get()).experimental?.mcp_lazy === true
-  for (const [key, item] of mcpLazy ? [] : Object.entries(yield* mcp.tools())) {
+  for (const [key, mcpTool] of Object.entries(yield* mcp.tools())) {
+    const item = McpCatalog.convertTool(mcpTool.def, mcpTool.client, mcpTool.timeout)
     const execute = item.execute
     if (!execute) continue
 

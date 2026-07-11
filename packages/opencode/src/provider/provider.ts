@@ -1,4 +1,5 @@
 import { LayerNode } from "@opencode-ai/core/effect/layer-node"
+import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
 import os from "os"
 import { ConfigV1 } from "@opencode-ai/core/v1/config/config"
 import fuzzysort from "fuzzysort"
@@ -2007,5 +2008,7 @@ export const node = LayerNode.make({
   layer: layer,
   deps: [FSUtil.node, Config.node, Auth.node, Env.node, Plugin.node, ModelsDev.node, RuntimeFlags.node],
 })
+
+export const defaultLayer = AppNodeBuilder.build(node)
 
 export * as Provider from "./provider"

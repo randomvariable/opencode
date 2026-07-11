@@ -7,6 +7,7 @@ import { Config } from "@/config/config"
 import { CrossSpawnSpawner } from "@opencode-ai/core/cross-spawn-spawner"
 import { Ripgrep } from "@opencode-ai/core/ripgrep"
 import { Database } from "@opencode-ai/core/database/database"
+import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
 import { Messaging } from "../../src/messaging"
 import { Session } from "@/session/session"
 import { SessionRunState } from "@/session/run-state"
@@ -38,16 +39,16 @@ const layer = Layer.mergeAll(
   BackgroundJob.defaultLayer,
   EventV2Bridge.defaultLayer,
   Config.defaultLayer,
-  CrossSpawnSpawner.defaultLayer,
+  AppNodeBuilder.build(CrossSpawnSpawner.node),
   Session.defaultLayer,
   SessionRunState.defaultLayer,
   SessionStatus.defaultLayer,
   Truncate.defaultLayer,
   ToolRegistry.defaultLayer,
-  Database.defaultLayer,
+  AppNodeBuilder.build(Database.node),
   Messaging.layer.pipe(Layer.provideMerge(EventV2Bridge.defaultLayer)),
   RuntimeFlags.layer({}),
-).pipe(Layer.provide(Ripgrep.defaultLayer))
+).pipe(Layer.provide(AppNodeBuilder.build(Ripgrep.node)))
 
 const it = testEffect(layer)
 

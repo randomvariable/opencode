@@ -1,4 +1,5 @@
 import { LayerNode } from "@opencode-ai/core/effect/layer-node"
+import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
 import { Deferred, Effect, Layer, Schema, Context } from "effect"
 import { InstanceState } from "@/effect/instance-state"
 import { SessionID } from "@/session/schema"
@@ -157,5 +158,7 @@ const layer = Layer.effect(
 )
 
 export const node = LayerNode.make({ service: Service, layer: layer, deps: [EventV2Bridge.node] })
+
+export const defaultLayer = AppNodeBuilder.build(node)
 
 export * as Question from "."

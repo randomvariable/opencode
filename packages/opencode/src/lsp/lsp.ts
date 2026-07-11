@@ -1,4 +1,5 @@
 import { LayerNode } from "@opencode-ai/core/effect/layer-node"
+import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
 import { FSUtil } from "@opencode-ai/core/fs-util"
 import { EventV2Bridge } from "@/event-v2-bridge"
 import * as LSPClient from "./client"
@@ -503,5 +504,7 @@ export const node = LayerNode.make({
   layer: layer,
   deps: [Config.node, RuntimeFlags.node, FSUtil.node, EventV2Bridge.node],
 })
+
+export const defaultLayer = AppNodeBuilder.build(node)
 
 export * as LSP from "./lsp"

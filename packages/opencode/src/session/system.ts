@@ -1,4 +1,5 @@
 import { LayerNode } from "@opencode-ai/core/effect/layer-node"
+import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
 import { Context, Effect, Layer } from "effect"
 
 import { InstanceState } from "@/effect/instance-state"
@@ -146,5 +147,7 @@ export const node = LayerNode.make({
   layer: layer,
   deps: [Skill.node, MCP.node, locationServiceMapNode],
 })
+
+export const defaultLayer = AppNodeBuilder.build(node)
 
 export * as SystemPrompt from "./system"
