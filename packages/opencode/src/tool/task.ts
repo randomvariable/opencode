@@ -181,7 +181,6 @@ export const TaskTool = Tool.define(
           },
         })
       }
-      }
 
       if (!ctx.extra?.bypassAgentCheck) {
         yield* ctx.ask({
