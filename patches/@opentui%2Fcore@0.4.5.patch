@@ -1,0 +1,13 @@
+diff --git a/chunk-bun-t2myhmwd.js b/chunk-bun-t2myhmwd.js
+index 701d70dea2174e98ab56f4d614e678e868561479..ae9adf61deddb66cf6768dec87287ba27ba5973c 100644
+--- a/chunk-bun-t2myhmwd.js
++++ b/chunk-bun-t2myhmwd.js
+@@ -7936,7 +7936,7 @@ function getCurrentNodeAssetTarget() {
+ var CORE_ASSET_PREFIX = "@opentui/core/";
+ var PARSER_WORKER_ASSET_KEY = `${CORE_ASSET_PREFIX}parser.worker.js`;
+ var TREE_SITTER_WASM_ASSET_KEY = "web-tree-sitter/tree-sitter.wasm";
+-var bundledTreeSitterWorkerPath = await resolveBundledFilePath(PARSER_WORKER_ASSET_KEY, () => import("@opentui/core/parser.worker", { with: { type: "file" } }), new URL("../lib/tree-sitter/parser.worker.js", import.meta.url), import.meta.url, { useAssetRoot: false });
++var bundledTreeSitterWorkerPath = await resolveBundledFilePath(PARSER_WORKER_ASSET_KEY, () => import("@opentui/core/parser.worker", { with: { type: "file" } }), new URL("../lib/tree-sitter/parser.worker.js", import.meta.url), import.meta.url, { useAssetRoot: false }).catch(() => undefined);
+ function resolveDefaultParserAsset(relativePath, fallbackPath) {
+   return resolveBundledDefaultParserAsset(relativePath, fallbackPath);
+ }
