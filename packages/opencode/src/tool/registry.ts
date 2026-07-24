@@ -32,10 +32,11 @@ import { WebSearchTool } from "./websearch"
 import { LspTool } from "./lsp"
 import * as Truncate from "./truncate"
 import { ApplyPatchTool } from "./apply_patch"
+import { McpSearchTool } from "./mcp-search"
 import { Glob } from "@opencode-ai/core/util/glob"
 import path from "path"
 import { pathToFileURL } from "url"
-import { Effect, Layer, Context, Option } from "effect"
+import { Effect, Layer, Context } from "effect"
 import { FetchHttpClient } from "effect/unstable/http"
 import { CrossSpawnSpawner } from "@opencode-ai/core/cross-spawn-spawner"
 import { Format } from "../format"
@@ -118,7 +119,7 @@ const layer = Layer.effect(
     const greptool = yield* GrepTool
     const patchtool = yield* ApplyPatchTool
     const skilltool = yield* SkillTool
-    const mcpServiceOpt = yield* Effect.serviceOption(MCP.Service)
+    const mcpsearch = yield* McpSearchTool
     const agent = yield* Agent.Service
     const codeMode = flags.experimentalCodeMode ? yield* Effect.promise(() => import("./code-mode")) : undefined
     const codeModeTool = codeMode ? yield* codeMode.CodeModeTool : undefined
@@ -211,7 +212,8 @@ const layer = Layer.effect(
         const cfg = yield* config.get()
         const questionEnabled = ["app", "cli", "desktop"].includes(flags.client) || flags.enableQuestionTool
 
-        const mcpsearchDef: Tool.Def[] = []
+        const mcpLazyEnabled = cfg.experimental?.mcp_lazy === true
+        const mcpsearchDef: Tool.Def[] = mcpLazyEnabled ? [yield* Tool.init(mcpsearch)] : []
 
         const tool = yield* Effect.all({
           invalid: Tool.init(invalid),
@@ -491,7 +493,6 @@ export const node = LayerNode.make({
     Format.node,
     Truncate.node,
     RuntimeFlags.node,
-    MCP.node,
     Database.node,
     Ripgrep.node,
   ] as const,

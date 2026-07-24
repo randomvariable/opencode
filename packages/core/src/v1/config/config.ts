@@ -186,6 +186,10 @@ export const Info = Schema.Struct({
         description:
           "Enable lazy loading of MCP tools. When enabled, MCP tools are not loaded into context automatically. Instead, use the mcp_search tool to discover and call MCP tools on-demand.",
       }),
+      mcp_lazy_exempt: Schema.optional(Schema.mutable(Schema.Array(Schema.String))).annotate({
+        description:
+          "Regex patterns (matched against the remote MCP server+tool composite key and raw tool name) that exempt specific external MCP-server tools from mcp_lazy hiding, keeping them inlined even when mcp_lazy is enabled. Only true remote MCP-server tools are ever subject to mcp_lazy; built-in tools and plugin-provided tools are never lazy-hidden (they are protected structurally, not via these patterns), so there is no need to list them here.",
+      }),
       subagent_interrupt: Schema.optional(Schema.Boolean).annotate({
         description:
           "Enable the subagent interrupt HTTP endpoint and TUI esc-with-reason UX. Server-controlled; reflects the OPENCODE_EXPERIMENTAL_SUBAGENT_INTERRUPT runtime flag.",
@@ -196,5 +200,14 @@ export const Info = Schema.Struct({
     }),
   ),
 }).annotate({ identifier: "Config" })
+
+/**
+ * Default mcp_lazy exemption patterns. These are an additional override applied ONLY to the
+ * subset of true remote MCP-server tools that should stay inlined when mcp_lazy is enabled.
+ * Built-in tools (bash/read/edit/write/grep/glob/etc.) and plugin-provided tools are never
+ * subject to mcp_lazy at all — they flow through a separate registry path and are protected
+ * structurally, so they do not need to be (and are not) listed here.
+ */
+export const MCP_LAZY_EXEMPT_DEFAULT = ["^ctx_", "^aft_", "^omo-slim"]
 
 export type Info = DeepMutable<Schema.Schema.Type<typeof Info>>

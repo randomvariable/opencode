@@ -1,4 +1,5 @@
 import { Agent } from "@/agent/agent"
+import { ConfigV1 } from '@opencode-ai/core/v1/config/config';
 import { SessionV1 } from "@opencode-ai/core/v1/session"
 import { Provider } from "@/provider/provider"
 import { ProviderTransform } from "@/provider/transform"
@@ -389,7 +390,14 @@ export const resolve = Effect.fn("SessionTools.resolve")(function* (input: {
 
   if (flags.experimentalCodeMode) return tools
 
+  const cfg = yield* config.get()
+  const mcpLazy = cfg.experimental?.mcp_lazy === true
+  const exemptPatterns = (cfg.experimental?.mcp_lazy_exempt ?? ConfigV1.MCP_LAZY_EXEMPT_DEFAULT).map((p) => new RegExp(p))
+  const isExempt = (fullKey: string, toolName: string) =>
+    exemptPatterns.some((re) => re.test(fullKey) || re.test(toolName))
+
   for (const [key, mcpTool] of Object.entries(yield* mcp.tools())) {
+    if (mcpLazy && !isExempt(key, mcpTool.def.name)) continue
     const item = McpCatalog.convertTool(mcpTool.def, mcpTool.client, mcpTool.timeout)
     const execute = item.execute
     if (!execute) continue

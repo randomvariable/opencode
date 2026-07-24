@@ -1,5 +1,7 @@
+import { McpCatalog } from '@/mcp/catalog';
 import { LayerNode } from "@opencode-ai/core/effect/layer-node"
 import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
+import { ConfigV1 } from '@opencode-ai/core/v1/config/config';
 import { PermissionV1 } from "@opencode-ai/core/v1/permission"
 import path from "path"
 import { SessionV1 } from "@opencode-ai/core/v1/session"
@@ -1387,11 +1389,18 @@ const layer = Layer.effect(
             // When MCP lazy loading is enabled, advertise connected servers so the
             // model knows to reach for the mcp_search tool instead of inlined MCP tools.
             const mcpServersPrompt = yield* Effect.gen(function* () {
-              if ((yield* config.get()).experimental?.mcp_lazy !== true) return [] as string[]
+              const cfg = yield* config.get()
+              if (cfg.experimental?.mcp_lazy !== true) return [] as string[]
+              const exemptPatterns = (cfg.experimental?.mcp_lazy_exempt ?? ConfigV1.MCP_LAZY_EXEMPT_DEFAULT).map(
+                (p) => new RegExp(p),
+              )
               const status = yield* mcp.status()
               const servers = Object.entries(status)
                 .filter(([, s]) => s.status === "connected")
                 .map(([name]) => name)
+                // Drop servers whose tools are fully exempt from mcp_lazy hiding — they stay
+                // inlined, so the model should not be told to route through mcp_search for them.
+                .filter((name) => !exemptPatterns.some((re) => re.test(McpCatalog.sanitize(name)) || re.test(name)))
               if (servers.length === 0) return [] as string[]
               return [
                 [
